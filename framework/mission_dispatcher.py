@@ -67,7 +67,11 @@ class MissionDispatcher:
 
     # ---- 主流程 ----
     def run_prescan(self):
-        """执行 [1]-[9] 预扫描流程。"""
+        """执行 [1]-[9] 预扫描流程。
+
+        顺序约定（已确认）：[8] 地图发送成功后 立即 [9] 关闭摄像头3，
+        再 [10] 拉起原任务。
+        """
         raise NotImplementedError("TODO: 按 DESIGN.md §6 时序串联")
 
     def launch_original(self):

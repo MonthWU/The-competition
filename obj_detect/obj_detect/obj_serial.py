@@ -3,6 +3,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from ai_msgs.msg import PerceptionTargets
 import datetime
+import numpy as np
 
 from serial import Serial
 
@@ -64,9 +65,42 @@ class ObjSerial(Node):
     def det_callback(self, msg):
         # self.get_logger().info("Det recvd!")
         # print(msg.targets)
+        def eucilidean_distance(pt1, pt2):
+            assert len(pt1) == 2 and len(pt2) == 2, "Points must be 2D in cv::Mat!!"
+            pt1, pt2 = np.array(pt1), np.array(pt2)
+            return np.sqrt(np.sum((pt1 - pt2) ** 2))
+
+        def target_distance(target):
+            if target.type.endswith("cf"):
+                return (
+                    np.inf
+                )  # 如果是圆环，直接返回无穷大，以便所有圆环排序在同一侧：[oooccc...]
+            roi = target.rois[0].rect
+            return eucilidean_distance(
+                (324, 204),
+                (roi.x_offset + roi.width // 2, roi.y_offset + roi.height // 2),
+            )
+
         if self.mode == 0:
             return
+        targets = sorted(
+            msg.targets, key=target_distance, reverse=True
+        )  # 降序排序，最后面的就是距离最近的
+        if len(targets) == 0:
+            return
+        nearest = targets[-1]  # Most near object target
+        if nearest.type.endswith('of'):
+            roi = nearest.rois[0].rect
+            ctx = roi.x_offset + roi.width // 2
+            cty = roi.y_offset + roi.height // 2
+            conf = nearest.rois[0].confidence
+            self.get_logger().info(f"{nearest.type}, {ctx}, {cty}, {conf:.2f}")
+            self.send(nearest.type, ctx, cty)
+
+        # Note: 省赛，一范围内发送，超出范围的不发送
         for tg in msg.targets:
+            if tg.type.endswith("of"):
+                break
             roi = tg.rois[0].rect
             ctx = roi.x_offset + roi.width // 2
             cty = roi.y_offset + roi.height // 2

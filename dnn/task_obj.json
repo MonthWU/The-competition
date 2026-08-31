@@ -1,6 +1,6 @@
 {
-	"model_file": "/root/dev_ws/appli/dnn/yolov5s_1110_640_nv12_3out_672.bin",
-	"model_name": "yolov5s_1110_640_nv12_3out_672",
+	"model_file": "/root/dev_ws/appli/dnn/250720_v5s_672.bin",
+	"model_name": "250720_v5s_672",
 	"dnn_Parser": "yolov5x",
 	"model_output_count": 3,
 	"class_num": 6,

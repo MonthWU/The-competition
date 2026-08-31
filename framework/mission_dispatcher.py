@@ -1,52 +1,84 @@
-"""mission_dispatcher —— 任务编排节点（骨架）。
+"""mission_dispatcher —— 预扫描流程编排节点（骨架，流程规定见 DESIGN.md §6）。
 
-职责：一键式串联 预扫描 → 障碍识别 → 道路判定 → 路径规划 → 串口下发 → 拉起原任务。
-串口分时：预扫描/规划阶段独占 ttyS1；原任务阶段由 obj_serial 独占。
+时序（用户定义）：
+  [1] 开启摄像头3
+  [2] 等待下位机串口指令（读 ttyS1）
+  [3-5] 云台 0°/45°/90° 扫描，每角度回传成功指令
+  [6] 障碍识别 → 就近候选点 → MapModel 标记
+  [7] 其余 x 换 1，输出纯 1/0 地图
+  [8] 串口传输 5×5 地图给下位机
+  [9] 关闭摄像头3
+  [10] 拉起原任务 run_all.launch.py
 
-计划接口：
-    run_prescan()          # 调 camera_pan + map_scanner 完成 0/45/90 三帧采集
-    detect_obstacles()     # 调 obstacle_detector 识别黑色几何体
-    judge_roads()          # 调 road_judge 输出障碍节点集
-    plan_path()            # 调 path_planner 生成避障路径
-    send_path()            # 串口下发路径指令给下位机
-    launch_original()      # subprocess 拉起 run_all.launch.py（原任务）
+串口分时：预扫描阶段独占 ttyS1；原任务阶段由 obj_serial 独占。
 """
+
+import serial  # pyserial
+
+SERIAL_DEV = "/dev/ttyS1"
+SERIAL_BAUD = 115200
+
+# 摄像头3（预扫描专用，video 设备号待确认）
+CAM3_VIDEO_DEVICE = "/dev/video3"  # 暂定
+
+from serial_protocol import (
+    TRIGGER_SCAN,
+    build_ack,
+    build_map_frame,
+)
+
 
 class MissionDispatcher:
     def __init__(self):
-        raise NotImplementedError("TODO: 初始化各子模块（camera_pan/map_scanner/...）")
+        # TODO: 初始化 camera_pan / map_scanner / obstacle_detector / road_judge / MapModel
+        self.ser = None
+        self.map_model = None
+        self.cam3 = None
 
+    # ---- 串口（预扫描阶段独占）----
+    def open_serial(self):
+        """打开 ttyS1（预扫描阶段独占）。"""
+        raise NotImplementedError("TODO: serial.Serial(SERIAL_DEV, SERIAL_BAUD, timeout=...)")
+
+    def close_serial(self):
+        """关闭串口，交给原任务阶段 obj_serial。"""
+        raise NotImplementedError("TODO: 释放串口")
+
+    def wait_trigger(self) -> bytes:
+        """[2] 等待下位机触发指令（超时后返回空）。"""
+        raise NotImplementedError("TODO: 读串口，匹配 TRIGGER_SCAN")
+
+    def send_ack(self, angle: float):
+        """[3-5] 每角度扫描完成后回传成功指令。"""
+        raise NotImplementedError("TODO: 调 build_ack(angle) 并 ser.write()")
+
+    def send_map(self):
+        """[8] 把纯 1/0 地图矩阵发给下位机。"""
+        raise NotImplementedError("TODO: 调 build_map_frame(map_model.to_list()) 并 ser.write()")
+
+    # ---- 摄像头3 ----
+    def start_cam3(self):
+        """[1] 开启摄像头3。"""
+        raise NotImplementedError("TODO: 打开 CAM3_VIDEO_DEVICE（注意与其它相机的 USB 分时）")
+
+    def kill_cam3(self):
+        """[9] 关闭摄像头3。"""
+        raise NotImplementedError("TODO: 释放摄像头3")
+
+    # ---- 主流程 ----
     def run_prescan(self):
-        """阶段0：斜视摄像头 0/45/90 三帧采集。"""
-        raise NotImplementedError("TODO: 调 camera_pan.goto(angle) + map_scanner.capture()")
-
-    def detect_obstacles(self):
-        """阶段1：识别黑色几何体，输出障碍像素坐标列表。"""
-        raise NotImplementedError("TODO: 调 obstacle_detector.detect()")
-
-    def judge_roads(self):
-        """阶段2：误差圈 + 候选点判定，输出障碍节点集。"""
-        raise NotImplementedError("TODO: 调 road_judge.judge()")
-
-    def plan_path(self):
-        """阶段3：BFS 避障路径规划。"""
-        raise NotImplementedError("TODO: 调 path_planner.plan()")
-
-    def send_path(self, path):
-        """串口下发路径指令（协议待下位机确认）。"""
-        raise NotImplementedError("TODO: ttyS1 分时写串口")
+        """执行 [1]-[9] 预扫描流程。"""
+        raise NotImplementedError("TODO: 按 DESIGN.md §6 时序串联")
 
     def launch_original(self):
-        """阶段4：拉起原任务 launch（原代码零改动）。"""
+        """[10] 拉起原任务 launch（原代码零改动）。"""
         raise NotImplementedError("TODO: subprocess 调 run_all.launch.py")
 
 
 def main():
     disp = MissionDispatcher()
     disp.run_prescan()
-    disp.detect_obstacles()
-    disp.judge_roads()
-    disp.plan_path()
+    disp.launch_original()
 
 
 if __name__ == "__main__":

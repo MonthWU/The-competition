@@ -1,46 +1,61 @@
 """road_judge —— 障碍道路判定（骨架）。
 
-根据识别结果（地图坐标 + 误差带）判定命中哪些候选点（17 → 简化 13）。
-误差圈半径随距离增大（斜视远端误差大），保守策略：圈内候选点全部标记为障碍。
+输入：识别到的障碍位置（5×5 网格坐标或可换算为网格坐标）。
+输出：命中的障碍候选点（x 位置）集合 → 交给 MapModel.place_obstacle() 标记通行矩阵。
+
+判定策略（用户约定）：
+  - 障碍只可能放置在 13 个候选点（x）上
+  - 识别误差宽松（按场地 2400×2400 与 5×5 网格粒度折算）
+  - 障碍坐标 → 就近候选点判定（距离 < 阈值即命中；保守策略：圈内候选点全部标记）
 """
 
-# 13 节点候选点（来自 dotspng.png 精确提取，原始图尺寸 800×480，单位：原图像素）
-# 结构：3×3 田字形网格（横线 y≈72/260/433，竖线 x≈137/354/588）+ 4 条外边中点
-# 格式: (id, x, y)
-CANDIDATE_POINTS_17 = [
-    # 内部 3×3 网格 9 节点
-    ("P01", 137,  72), ("P02", 353,  72), ("P03", 588,  72),
-    ("P04", 137, 260), ("P05", 354, 260), ("P06", 588, 260),
-    ("P07", 137, 433), ("P08", 355, 433), ("P09", 588, 433),
-    # 外边 4 个中点（顶/左/底/右）
-    ("P10", 240,  66), ("P11", 468,  66), ("P12", 240, 437), ("P13", 468, 437),
-    # 预留扩展（若现场出现 17 个候选位，在此追加）
-    # ("P14", ...), ("P15", ...), ("P16", ...), ("P17", ...),
-]
+import math
 
-VALID_POINTS_13 = [
-    # 13 节点图即最终 13 判定点（用户确认：这 13 个点占据 13 条路径）
-    ("P01", 137,  72), ("P02", 353,  72), ("P03", 588,  72),
-    ("P04", 137, 260), ("P05", 354, 260), ("P06", 588, 260),
-    ("P07", 137, 433), ("P08", 355, 433), ("P09", 588, 433),
-    ("P10", 240,  66), ("P11", 468,  66), ("P12", 240, 437), ("P13", 468, 437),
-]
+from map_model import OBSTACLE_CANDIDATES_13, MapModel
+
+
+def nearest_candidate(r: float, c: float) -> tuple:
+    """返回距 (r,c) 最近的候选点 ((cr, cc), dist)。"""
+    best = None
+    for (cr, cc) in OBSTACLE_CANDIDATES_13:
+        d = math.hypot(cr - r, cc - c)
+        if best is None or d < best[1]:
+            best = ((cr, cc), d)
+    return best
 
 
 class RoadJudge:
-    def __init__(self, error_near=50, error_far=200):
+    def __init__(self, hit_threshold: float = 1.5):
+        """hit_threshold：障碍网格坐标与候选点的最大判定距离（5×5 网格单位）。
+        误差宽松：1.5 格以内视为命中该候选点（可按现场实测调整）。
+        """
         raise NotImplementedError("TODO: 误差参数按标定实测校准")
 
-    def error_radius(self, distance) -> float:
-        """按距离返回误差圈半径（近小远大）。"""
-        raise NotImplementedError("TODO: 近小远大（线性/分段）")
-
-    def judge(self, obstacles) -> set:
-        """输入障碍地图坐标列表，输出被标记的障碍节点集合。
+    def judge(self, obstacles: list) -> set:
+        """输入障碍网格坐标列表 [(r,c), ...]，返回命中的障碍候选点集合 {(r,c)}。
 
         实现流程（TODO）：
-          1. 障碍(场地坐标) → 误差圈(随距离增大)
-          2. 遍历 CANDIDATE_POINTS_17 / VALID_POINTS_13，落入圈内的候选点 → 标记为障碍
-          3. 图像坐标系 → 场地坐标系换算用单应性 H（见 obstacle_detector）
+          1. 对每个障碍坐标调 nearest_candidate()，dist <= hit_threshold 即命中
+          2. 命中点并入结果集合（保守：误差圈内全部标记）
+          3. 结果交给 MapModel.set_obstacles()
         """
-        raise NotImplementedError("TODO: 误差圈 + 候选点判定（13 节点已定义）")
+        raise NotImplementedError("TODO: 障碍 → 就近候选点判定（13 候选点见 map_model）")
+
+
+def demo():
+    """骨架演示：手写障碍坐标 → 判定 → 更新通行矩阵。"""
+    m = MapModel()
+    # TODO: 正式实现后改为 RoadJudge().judge()
+    obstacles = [(2.1, 2.0), (4.0, 1.3)]
+    for r, c in obstacles:
+        (cr, cc), d = nearest_candidate(r, c)
+        print(f"障碍 ({r},{c}) → 最近候选 ({cr},{cc}) 距离 {d:.2f}")
+        m.place_obstacle(cr, cc)
+    print()
+    print("标记后地图：")
+    print(m)
+    print("障碍候选点已占用:", m.obstacle_cells())
+
+
+if __name__ == "__main__":
+    demo()

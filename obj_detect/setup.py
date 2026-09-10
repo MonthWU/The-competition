@@ -26,7 +26,6 @@ setup(
     entry_points={
         'console_scripts': [
             "obj_serial = obj_detect.obj_serial:main",
-            "obj_serial_v11 = obj_detect.obj_serial_v11:main",
             "obj_camd = obj_detect.obj_camd:main",
             "obj_video_dumper = obj_detect.obj_vid_dumper:main",
         ],

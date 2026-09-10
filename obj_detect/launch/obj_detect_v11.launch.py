@@ -210,11 +210,11 @@ def generate_launch_description():
         )
     )
 
-    # 串口发送
+    # 串口发送（v11 回归：复用 obj_serial，其解析已支持 9 类新模型）
     obj_serial_node = Node(
         package="obj_detect",
-        executable="obj_serial_v11",
-        name="obj_serial_v11",
+        executable="obj_serial",
+        name="obj_serial",
     )
 
     # 视频保存

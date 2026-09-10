@@ -9,6 +9,35 @@ from serial import Serial
 
 ser_dev = "/dev/ttyS1"
 
+# 物块族（圆台物块 6 色，yolov11 新模型）：每帧只发离参考点最近的 1 个
+CLASS_BLOCK = {
+    "red1": 0x41,
+    "black1": 0x42,
+    "green1": 0x43,
+    "yellow1": 0x44,
+    "blue1": 0x45,
+    "blue2": 0x46,
+}
+# 放置区标识（3 种，yolov11 新模型）：全部发送
+CLASS_MARK = {
+    "targetOne": 0x51,
+    "targetTwo": 0x52,
+    "targetThree": 0x53,
+}
+# 兼容保留：旧模型（250720_v5s）的物块 of / 圆环 cf
+CLASS_BLOCK_LEGACY = {"rof": 0x34, "gof": 0x35, "bof": 0x36}
+CLASS_MARK_LEGACY = {"rcf": 0x31, "gcf": 0x32, "bcf": 0x33}
+
+
+def is_block(t):
+    """物块族判别：圆台物块（新，6 色）或旧 of 物块"""
+    return t in CLASS_BLOCK or t in CLASS_BLOCK_LEGACY
+
+
+def is_mark(t):
+    """放置区标识判别：标识物（新，3 种）或旧圆环 cf"""
+    return t in CLASS_MARK or t in CLASS_MARK_LEGACY
+
 
 class ByteArray(bytearray):
     def __init__(self, data):
@@ -34,6 +63,7 @@ class ObjSerial(Node):
         self.serial_send_pub = self.create_publisher(String, "serial_send", 10)
         self.xin = 180
         self.yin = 420
+        self.ref_pt = (324, 204)  # "最近目标"参考点（沿原项目）
         self.mode = 2  # 0: send qrcode info; 1: send obj det results; 2: send both
         # self.call_opened() # no send a startup signal. Send all even empty qrcode data
         self.cnt = 0
@@ -65,31 +95,18 @@ class ObjSerial(Node):
     def det_callback(self, msg):
         # self.get_logger().info("Det recvd!")
         # print(msg.targets)
-        def eucilidean_distance(pt1, pt2):
-            assert len(pt1) == 2 and len(pt2) == 2, "Points must be 2D in cv::Mat!!"
-            pt1, pt2 = np.array(pt1), np.array(pt2)
-            return np.sqrt(np.sum((pt1 - pt2) ** 2))
-
-        def target_distance(target):
-            if target.type.endswith("cf"):
-                return (
-                    np.inf
-                )  # 如果是圆环，直接返回无穷大，以便所有圆环排序在同一侧：[oooccc...]
-            roi = target.rois[0].rect
-            return eucilidean_distance(
-                (324, 204),
-                (roi.x_offset + roi.width // 2, roi.y_offset + roi.height // 2),
-            )
-
         if self.mode == 0:
             return
-        targets = sorted(
-            msg.targets, key=target_distance, reverse=True
-        )  # 降序排序，最后面的就是距离最近的
-        if len(targets) == 0:
-            return
-        nearest = targets[-1]  # Most near object target
-        if nearest.type.endswith('of'):
+        def dist_to_ref(target):
+            roi = target.rois[0].rect
+            cx = roi.x_offset + roi.width // 2
+            cy = roi.y_offset + roi.height // 2
+            return float(np.hypot(cx - self.ref_pt[0], cy - self.ref_pt[1]))
+
+        # 物块族（圆台物块 6 色 / 旧 of）：每帧只发离参考点最近的 1 个
+        blocks = [t for t in msg.targets if is_block(t.type)]
+        if blocks:
+            nearest = min(blocks, key=dist_to_ref)
             roi = nearest.rois[0].rect
             ctx = roi.x_offset + roi.width // 2
             cty = roi.y_offset + roi.height // 2
@@ -97,36 +114,27 @@ class ObjSerial(Node):
             self.get_logger().info(f"{nearest.type}, {ctx}, {cty}, {conf:.2f}")
             self.send(nearest.type, ctx, cty)
 
-        # Note: 省赛，一范围内发送，超出范围的不发送
+        # 放置区标识（3 种 / 旧圆环 cf）：全部发送（不受区域过滤限制）
         for tg in msg.targets:
-            if tg.type.endswith("of"):
-                break
+            if not is_mark(tg.type):
+                continue
             roi = tg.rois[0].rect
             ctx = roi.x_offset + roi.width // 2
             cty = roi.y_offset + roi.height // 2
             conf = tg.rois[0].confidence
             self.get_logger().info(f"{tg.type}, {ctx}, {cty}, {conf:.2f}")
-            if ctx > 320 - self.xin and ctx < 320 + self.xin and cty < self.yin:
-                self.send(tg.type, ctx, cty)
-            elif tg.type.endswith("cf"):
-                self.send(tg.type, ctx, cty)
-            else:
-                self.get_logger().info("Target out from region!")
+            self.send(tg.type, ctx, cty)
 
     def name2ser(self, c):
         """判断目标类型并返回对应的序列号"""
-        if c == "rcf":
-            return 0x31  # 49
-        elif c == "gcf":
-            return 0x32  # 50
-        elif c == "bcf":
-            return 0x33  # 51
-        elif c == "rof":
-            return 0x34  # 52
-        elif c == "gof":
-            return 0x35  # 53
-        elif c == "bof":
-            return 0x36  # 54
+        if c in CLASS_MARK:
+            return CLASS_MARK[c]         # 放置区标识 0x51~0x53
+        elif c in CLASS_BLOCK:
+            return CLASS_BLOCK[c]        # 圆台物块 0x41~0x46
+        elif c in CLASS_MARK_LEGACY:
+            return CLASS_MARK_LEGACY[c]  # 旧圆环 0x31~0x33
+        elif c in CLASS_BLOCK_LEGACY:
+            return CLASS_BLOCK_LEGACY[c] # 旧物块 0x34~0x36
         return 0x00
 
     def send_qrc(self, data):

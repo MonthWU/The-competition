@@ -1,6 +1,6 @@
 {
 	"model_file": "/root/dev_ws/appli/dnn/yolo11_x5.bin",
-	"model_name": "yolo11_x5_9cls",
+	"model_name": "yolo11_detect_bayese_640x640_nv12",
 	"dnn_Parser": "yolov8",
 	"model_output_count": 6,
 	"reg_max": 16,

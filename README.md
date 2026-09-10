@@ -56,7 +56,7 @@ appli/
 ├── service/                     # appli.service + appli.sh（自启链路）
 ├── gpio_shutdown/               # GPIO 关机键服务
 ├── other/                       # 辅助 launch/脚本
-├── framework/                   # 【新增】避障预扫描框架（见 DESIGN.md）
+├── framework/                   # 【新增】避障预扫描框架（通信完成、识别待实现；见 §6）
 └── _tmp_videos/                 # 检测录像输出
 ```
 
@@ -84,9 +84,57 @@ CLASS 映射：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 �
 
 ## 6. 避障增量（2027 新增，framework/）
 
-今年仅新增避障：开局斜视摄像头（车顶）0°/45°/90° 三帧预扫描 → 识别黑色障碍物
-（YOLOv11 + CV 兜底）→ 误差圈判定障碍道路（17→13 候选点）→ BFS 路径规划 → 串口下发
-路径指令 → 再执行原任务。详见 `framework/DESIGN.md`（只增不改，原代码零改动）。
+今年仅新增避障能力（只增不改，原代码零改动）。**架构约束（2026-09-05 确认）**：
+本仓库（RDK 上位机）只负责**视觉感知与串口通信**；云台转角、路径规划、行走等
+**一切控制由下位机完成**，故 `camera_pan.py` / `path_planner.py` 不在本仓库实现。
+
+预扫描流程：最开始时下位机发 `[num]`（启停位置，如 `[4]`=右上角 (0,4) 启停区）→ RDK
+记录并回 `[ack]`；
+随后下位机**分三次发 `[shot]`**（云台 0°/45°/90° 各转到位后触发一次，发一次拍一次；
+**0° 基线方向由启停位置决定**（已确认 2026-09-08：从 4 出发 0° 沿右列向下
+`4→9→14→19→24`；从 24 出发 0° 向左沿底行 `24→23→22→21→20`；0~90° 顺时针）→
+视觉每次回 `[ack]`（障碍识别 `obstacle_detector` 待实现）→ 三次完成后判定
+（误差圈就近命中 13 候选点 `road_judge` → `MapModel` 记录障碍）→ 下发地图帧
+`[<count> <障碍ID>... <校验>]`（如 `[2 1 3 00]`，仅一次）→ 再进入原任务。
+详见 `framework/DESIGN.md`（部分章节已过时，以本 README 为准）。
+
+### 6.1 预扫描通信协议（2026-09-08 v3，[] 帧；ttyS1@115200 不变）
+
+帧格式：ASCII 纯文本，**帧头 `[` + 载荷 + 帧尾 `]`**，无换行。
+
+| 方向 | 帧 | 说明 |
+|---|---|---|
+| 单片机 → 视觉 | `[4]` | 启停位置（5×5 row-major 0~24；右上=4、右下=24 为启停区），时序最前发一次 |
+| 视觉 → 单片机 | `[ack]` | 对启停帧的回执 |
+| 单片机 → 视觉 | `[shot]` | 触发一次拍摄（一个角度）；三个角度发三次 |
+| 视觉 → 单片机 | `[ack]` | 每次拍摄完成回传一次 |
+| 视觉 → 单片机 | `[2 1 3 00]` | 三次拍摄完成后（仅一次）：`[count 障碍ID… 校验]`。count=0~3；ID=5×5 网格 row-major 十进制 0~24（如 (0,1)→1、(0,3)→3）；校验=count XOR 各 ID，两位大写 HEX |
+
+实现：`framework/serial_protocol.py`（build_trigger / build_ack / build_obstacle_frame /
+parse_trigger / parse_ack / parse_obstacle_frame / 启停帧 build_start_frame / parse_start_frame /
+is_start_frame）+ `framework/mission_dispatcher.py`
+（run_prescan：等 `[num]` 启停 → `[ack]` → 三次 `[shot]` → `scan_angle` 钩子 → 三次 `[ack]`
+→ 地图帧 `[count ID… CHK]`；`START_DIR_MAP` 记录 0° 基线方向草案，**待人工确认固化**，
+→ 地图帧 `[count ID… CHK]`；`START_DIR_MAP` 已确认（4→右列向下 / 24→底行向左），
+串口读写已完成，
+视觉环节保留 `scan_angle` 钩子）。无下位机联调：
+`cd framework && python3 /tmp/test_comm.py`（os.openpty 虚拟串口对，`[4]`→ack→3×shot→3×ack→`[2 1 3 00]` 闭环）。
+
+### 6.2 framework/ 新增节点状态（2026-09-05）
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `map_model.py` | ✅ 完成 | 5×5 通行矩阵 + 13 候选点 / 8 固定节点 |
+| `road_judge.py` | ⚠️ 部分 | `nearest_candidate` 已实现；`judge()` 误差圈判定待实现 |
+| `serial_protocol.py` | ✅ 完成 | 文本协议编码/解码（shot / ack / 25 位地图） |
+| `mission_dispatcher.py` | ✅ 通信完成 | `run_prescan` 时序 + 串口读写；`scan_angle` 视觉钩子待接 |
+| `obstacle_detector.py` | ❌ 待实现 | YOLOv11 / CV 分割 + 单应性或区间判定（决定 `scan_angle` 能否返回 True） |
+| `camera_pan.py` | ⏸ 不实现 | 云台控制归下位机 |
+| `path_planner.py` | ⏸ 不实现 | 路径规划归下位机 |
+| `DESIGN.md` | ⚠️ 部分过时 | 协议/状态以本 README 与 `serial_protocol.py` 为准 |
+
+半成品：**13 候选点照片区间标定**——0°/45° 照片人工框选斜四边形 ROI（标注器 skill
+`map-quad-annotator`，板端 :8888 页面）。当前 0° 已框 6 个（待补 label 与剩余），45° 未框。
 
 ## 7. Git 与回滚
 

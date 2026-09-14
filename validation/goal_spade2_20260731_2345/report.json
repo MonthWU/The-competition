@@ -1,0 +1,430 @@
+{
+  "input": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\captures\\codex_camera_20260731_232232.jpg",
+  "decision": "PASS_SPADE2_RECONSTRUCTED_WITH_INTERCHANGEABLE_ORDER",
+  "jetson_used": false,
+  "a4_quad_px": [
+    [
+      503.5660095214844,
+      32.360015869140625
+    ],
+    [
+      1099.9901123046875,
+      36.445159912109375
+    ],
+    [
+      1094.3116455078125,
+      865.4884033203125
+    ],
+    [
+      497.8876037597656,
+      861.4031982421875
+    ]
+  ],
+  "piece_count": 4,
+  "layout_slots": [
+    "top_left",
+    "top_right",
+    "bottom_left",
+    "bottom_right"
+  ],
+  "best_layout": {
+    "score": 6.0945356968612785,
+    "seam_score": 0.7356553911205074,
+    "top_vertical_seam_score": 0.3101515151515151,
+    "bottom_vertical_seam_score": 0.42550387596899225,
+    "corner_score": 0.26477272727272727,
+    "pip_score": 0.6487762237762238,
+    "corner_ink": {
+      "top_left": 0.12886363636363637,
+      "top_right": 0.0,
+      "bottom_left": 0.0,
+      "bottom_right": 0.1359090909090909
+    },
+    "permutation": [
+      4,
+      1,
+      2,
+      3
+    ],
+    "rotated_180_slots": [
+      0,
+      1
+    ]
+  },
+  "second_layout": {
+    "score": 6.092789270914272,
+    "seam_score": 0.7353935185185188,
+    "top_vertical_seam_score": 0.31375000000000003,
+    "bottom_vertical_seam_score": 0.42164351851851867,
+    "corner_score": 0.26477272727272727,
+    "pip_score": 0.6486013986013985,
+    "corner_ink": {
+      "top_left": 0.12886363636363637,
+      "top_right": 0.0,
+      "bottom_left": 0.0,
+      "bottom_right": 0.1359090909090909
+    },
+    "permutation": [
+      4,
+      2,
+      1,
+      3
+    ],
+    "rotated_180_slots": [
+      0,
+      1
+    ]
+  },
+  "score_margin": 0.0017464259470063581,
+  "exact_layout_unique": false,
+  "spade2_evidence": {
+    "top_vertical_seam_pass": true,
+    "bottom_vertical_seam_pass": true,
+    "opposite_corner_indices_pass": true,
+    "two_central_pips_pass": true
+  },
+  "pieces": [
+    {
+      "source_index": 1,
+      "center_px": [
+        134.55377197265625,
+        239.83786010742188
+      ],
+      "size_px": [
+        153.12045288085938,
+        219.57415771484375
+      ],
+      "angle_deg": -1.3169124126434326,
+      "area_px": 31354.5,
+      "box_px": [
+        [
+          60.53694152832031,
+          351.3554992675781
+        ],
+        [
+          55.49058532714844,
+          131.8393096923828
+        ],
+        [
+          208.5706024169922,
+          128.3202362060547
+        ],
+        [
+          213.61695861816406,
+          347.8363952636719
+        ]
+      ],
+      "piece_id": 1
+    },
+    {
+      "source_index": 2,
+      "center_px": [
+        320.848876953125,
+        199.52931213378906
+      ],
+      "size_px": [
+        156.25877380371094,
+        218.37925720214844
+      ],
+      "angle_deg": -5.273896217346191,
+      "area_px": 31605.5,
+      "box_px": [
+        [
+          253.08660888671875,
+          315.4381408691406
+        ],
+        [
+          233.01385498046875,
+          97.98332977294922
+        ],
+        [
+          388.61114501953125,
+          83.6205062866211
+        ],
+        [
+          408.68389892578125,
+          301.0752868652344
+        ]
+      ],
+      "piece_id": 2
+    },
+    {
+      "source_index": 3,
+      "center_px": [
+        504.6789855957031,
+        190.24102783203125
+      ],
+      "size_px": [
+        156.1675262451172,
+        212.10618591308594
+      ],
+      "angle_deg": -7.539445400238037,
+      "area_px": 30741.0,
+      "box_px": [
+        [
+          441.1853332519531,
+          305.6225280761719
+        ],
+        [
+          413.35516357421875,
+          95.35005950927734
+        ],
+        [
+          568.172607421875,
+          74.8595199584961
+        ],
+        [
+          596.0027465820312,
+          285.1319885253906
+        ]
+      ],
+      "piece_id": 3
+    },
+    {
+      "source_index": 4,
+      "center_px": [
+        680.1465454101562,
+        168.07513427734375
+      ],
+      "size_px": [
+        159.2402801513672,
+        221.6707305908203
+      ],
+      "angle_deg": -7.953082084655762,
+      "area_px": 31898.0,
+      "box_px": [
+        [
+          616.627685546875,
+          288.8608703613281
+        ],
+        [
+          585.956787109375,
+          69.32222747802734
+        ],
+        [
+          743.6654052734375,
+          47.28940200805664
+        ],
+        [
+          774.3363037109375,
+          266.8280334472656
+        ]
+      ],
+      "piece_id": 4
+    }
+  ],
+  "outputs": {
+    "rectified_a4": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\goal_spade2_20260731_2345\\rectified_a4.jpg",
+    "piece_sheet": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\goal_spade2_20260731_2345\\piece_sheet.jpg",
+    "reconstructed_clean": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\goal_spade2_20260731_2345\\spade2_reconstructed_clean.jpg",
+    "reconstructed_overlay": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\goal_spade2_20260731_2345\\spade2_reconstructed_overlay.jpg",
+    "report_json": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\goal_spade2_20260731_2345\\report.json",
+    "report_md": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\goal_spade2_20260731_2345\\report.md"
+  },
+  "notes": [
+    "Windows offline evidence only; no Jetson, ROS, HMI, MCU, or mechanism validation.",
+    "When the score margin is small, visually equivalent blank/low-texture halves may be interchangeable even though the spade-2 face is reconstructed."
+  ],
+  "top_candidates": [
+    {
+      "score": 6.0945356968612785,
+      "seam_score": 0.7356553911205074,
+      "top_vertical_seam_score": 0.3101515151515151,
+      "bottom_vertical_seam_score": 0.42550387596899225,
+      "corner_score": 0.26477272727272727,
+      "pip_score": 0.6487762237762238,
+      "corner_ink": {
+        "top_left": 0.12886363636363637,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.1359090909090909
+      },
+      "permutation": [
+        4,
+        1,
+        2,
+        3
+      ],
+      "rotated_180_slots": [
+        0,
+        1
+      ]
+    },
+    {
+      "score": 6.092789270914272,
+      "seam_score": 0.7353935185185188,
+      "top_vertical_seam_score": 0.31375000000000003,
+      "bottom_vertical_seam_score": 0.42164351851851867,
+      "corner_score": 0.26477272727272727,
+      "pip_score": 0.6486013986013985,
+      "corner_ink": {
+        "top_left": 0.12886363636363637,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.1359090909090909
+      },
+      "permutation": [
+        4,
+        2,
+        1,
+        3
+      ],
+      "rotated_180_slots": [
+        0,
+        1
+      ]
+    },
+    {
+      "score": 5.831716847966848,
+      "seam_score": 0.7577314814814815,
+      "top_vertical_seam_score": 0.31375000000000003,
+      "bottom_vertical_seam_score": 0.44398148148148153,
+      "corner_score": 0.12886363636363637,
+      "pip_score": 0.6625874125874126,
+      "corner_ink": {
+        "top_left": 0.12886363636363637,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.0
+      },
+      "permutation": [
+        4,
+        2,
+        3,
+        1
+      ],
+      "rotated_180_slots": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "score": 5.794723840973841,
+      "seam_score": 0.7577314814814815,
+      "top_vertical_seam_score": 0.44398148148148153,
+      "bottom_vertical_seam_score": 0.31375000000000003,
+      "corner_score": 0.1359090909090909,
+      "pip_score": 0.6393356643356644,
+      "corner_ink": {
+        "top_left": 0.1359090909090909,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.0
+      },
+      "permutation": [
+        3,
+        1,
+        4,
+        2
+      ],
+      "rotated_180_slots": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "score": 5.758768328445747,
+      "seam_score": 0.7437536656891495,
+      "top_vertical_seam_score": 0.3101515151515151,
+      "bottom_vertical_seam_score": 0.4336021505376344,
+      "corner_score": 0.12886363636363637,
+      "pip_score": 0.6613636363636364,
+      "corner_ink": {
+        "top_left": 0.12886363636363637,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.0
+      },
+      "permutation": [
+        4,
+        1,
+        3,
+        2
+      ],
+      "rotated_180_slots": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "score": 5.727894202571622,
+      "seam_score": 0.7437536656891495,
+      "top_vertical_seam_score": 0.4336021505376344,
+      "bottom_vertical_seam_score": 0.3101515151515151,
+      "corner_score": 0.1359090909090909,
+      "pip_score": 0.6405594405594406,
+      "corner_ink": {
+        "top_left": 0.1359090909090909,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.0
+      },
+      "permutation": [
+        3,
+        2,
+        4,
+        1
+      ],
+      "rotated_180_slots": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "score": 5.675978973456037,
+      "seam_score": 0.6506328576282705,
+      "top_vertical_seam_score": 0.44398148148148153,
+      "bottom_vertical_seam_score": 0.206651376146789,
+      "corner_score": 0.26477272727272727,
+      "pip_score": 0.6513986013986014,
+      "corner_ink": {
+        "top_left": 0.1359090909090909,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.12886363636363637
+      },
+      "permutation": [
+        3,
+        1,
+        2,
+        4
+      ],
+      "rotated_180_slots": [
+        0,
+        1
+      ]
+    },
+    {
+      "score": 5.617024600332157,
+      "seam_score": 0.6389293955909069,
+      "top_vertical_seam_score": 0.4336021505376344,
+      "bottom_vertical_seam_score": 0.20532724505327246,
+      "corner_score": 0.26477272727272727,
+      "pip_score": 0.6512237762237763,
+      "corner_ink": {
+        "top_left": 0.1359090909090909,
+        "top_right": 0.0,
+        "bottom_left": 0.0,
+        "bottom_right": 0.12886363636363637
+      },
+      "permutation": [
+        3,
+        2,
+        1,
+        4
+      ],
+      "rotated_180_slots": [
+        0,
+        1
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+# IMX219 77-degree camera reference configuration.
+#
+# TODO(calibration): This is an FOV-derived provisional profile, not a measured
+# calibration. Replace camera_matrix and distortion_coefficients with results
+# from an OpenCV calibration captured at the final Jetson camera mode before
+# using measurements for physical dimensions or control decisions.
+#
+# The profile is valid only for a 1280x720 frame that preserves the estimated
+# 77-degree diagonal field of view. A sensor crop, a different camera mode, or
+# a resize performed before undistortion requires a corresponding update.
+
+camera:
+  identifier: "imx219_77deg"
+  sensor: "Sony IMX219"
+  native_resolution: [3280, 2464]
+  lens_focal_length_mm: 2.96
+  aperture_f_number: 2.0
+  diagonal_fov_deg: 77.0
+  stated_distortion_percent_max: 1.0
+
+calibration:
+  status: "provisional_fov_derived"
+  camera_model: "pinhole"
+  distortion_model: "plumb_bob"
+  image_width: 1280
+  image_height: 720
+  camera_matrix:
+    rows: 3
+    cols: 3
+    data: [924.0, 0.0, 639.5, 0.0, 924.0, 359.5, 0.0, 0.0, 1.0]
+  distortion_coefficients:
+    rows: 1
+    cols: 5
+    data: [0.0, 0.0, 0.0, 0.0, 0.0]
+  image_to_measurement_homography: null
+  length_unit: "pixel"
+  reprojection_error_px: null

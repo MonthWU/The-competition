@@ -1,0 +1,185 @@
+puzzle_perception_node:
+  ros__parameters:
+    scan_request_topic: "puzzle/scan_request"
+    task_session_topic: "puzzle/task_session"
+    scene_topic: "puzzle/scene"
+    debug_image_topic: "puzzle/image_debug"
+    status_topic: "puzzle/perception_status"
+    hmi_command_topic: "vision/hmi/command"
+    frame_id: "workspace_absolute"
+    camera_index: 0
+    # Lock exposure and white balance so contest start masking does not drive auto controls.
+    # Launch maps hmi_value_flash=0/1 to exposure_time_absolute=78/156.
+    camera_pipeline: "v4l2src device=/dev/video0 io-mode=2 extra-controls=c,auto_exposure=1,exposure_time_absolute=78,white_balance_automatic=0,white_balance_temperature=4650,gain=48,power_line_frequency=1 ! video/x-raw,format=YUY2,width=1920,height=1080,framerate=30/1 ! appsink drop=true max-buffers=1 sync=false"
+    input_width: 1920
+    input_height: 1080
+    capture_fps: 30.0
+    pixels_per_mm: 3.0
+    region_split_ratio: 0.5
+    # Scan uses a short multi-frame window; during tasks, debug preview keeps the
+    # last committed scan overlay instead of re-detecting every live frame.
+    stable_frames: 6
+    continuous_task_debug_detection: false
+    publish_debug_image: false
+    debug_mode: false
+    # Must be changed to true only after the fixed camera-to-workspace mapping is measured.
+    workspace_mapping_valid: false
+    workspace_homography_px_to_mm: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    # Negative values enable runtime A4 quadrilateral detection.
+    fixed_a4_corners_px: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+    # Task 3 fails closed while this remains false. Replace these values with a
+    # measured calibration for the final capture mode, then set true.
+    camera_calibration_valid: false
+    calibration_image_width: 1920
+    calibration_image_height: 1080
+    camera_matrix: [1386.0, 0.0, 959.5, 0.0, 1386.0, 539.5, 0.0, 0.0, 1.0]
+    distortion_coefficients: [0.0, 0.0, 0.0, 0.0, 0.0]
+
+puzzle_solver_node:
+  ros__parameters:
+    scene_topic: "puzzle/scene"
+    plan_topic: "puzzle/plan"
+    status_topic: "puzzle/solver_status"
+    solver_debug_image_topic: "puzzle/solver_image_debug"
+    task_session_topic: "puzzle/task_session"
+    pixels_per_mm: 3.0
+    # Basic-task serial output uses camera-centred pixels. Set this true only
+    # when placement_coordinate_frame is workspace_mm and the mapping is measured.
+    require_workspace_mapping: false
+    camera_y_axis_up: false
+    debug_mode: false
+    # Task 3: use playing-card white borders as the unique outer-frame lock,
+    # then use pattern evidence only for the remaining ambiguous layouts.
+    challenge_two_white_border_fast_solver_enabled: true
+    challenge_two_white_border_min_confidence: 0.72
+    challenge_two_white_border_band_mm: 2.5
+    challenge_two_white_border_min_luma: 178.0
+    challenge_two_white_border_max_chroma: 45.0
+    challenge_two_seam_gradient_min_continuity: 0.20
+    challenge_two_center_symmetry_pass_threshold: 0.50
+    challenge_two_center_symmetry_direct_threshold: 0.90
+    challenge_two_non_character_corner_white_pass_threshold: 0.60
+    challenge_two_card_corner_sample_mm: 10.0
+
+puzzle_coordinator_node:
+  ros__parameters:
+    start_topic: "puzzle/start"
+    task_command_topic: "puzzle/task_command"
+    scan_request_topic: "puzzle/scan_request"
+    scene_topic: "puzzle/scene"
+    plan_topic: "puzzle/plan"
+    placement_request_topic: "puzzle/placement_request"
+    placement_done_topic: "puzzle/placement_done"
+    task_session_topic: "puzzle/task_session"
+    map_result_topic: "puzzle/map_result"
+    status_topic: "puzzle/coordinator_status"
+    result_linger_sec: 1.0
+    debug_mode: false
+
+serial_bridge_node:
+  ros__parameters:
+    # 26E confirmed serial topology:
+    # - MCU<->Jetson is 115200 bps.
+    # - A directly connected HMI screen uses 9600 bps by default; either UART0 or
+    #   UART1 can be assigned to the HMI role by changing hmi_port/mcu_port.
+    # - The HMI screen may connect to a Jetson UART directly, or connect to the MCU
+    #   and be forwarded on the MCU UART by setting hmi_over_mcu=true.
+    gyro_input_port: "/dev/ttyTHS3"
+    mcu_port: "/dev/ttyTHS1"
+    # Direct-HMI default: screen on UART0, MCU on UART1. Either port can be swapped
+    # if the physical wiring is swapped and hmi_port/mcu_port remain different.
+    hmi_port: "/dev/ttyTHS3"
+    baud_rate: 115200
+    hmi_baud_rate: 9600
+    hmi_over_mcu: false
+    bridge_rate_hz: 200
+    frequency_tolerance_hz: 5.0
+    task_command_topic: "puzzle/task_command"
+    task_session_topic: "puzzle/task_session"
+    placement_topic: "puzzle/placement_request"
+    placement_done_topic: "puzzle/placement_done"
+    map_result_topic: "puzzle/map_result"
+    placement_coordinate_frame: "green_a4_normalized"
+    # Required rigid rotation: top-view counter-clockwise positive, clockwise negative.
+    placement_angle_mode: "delta"
+    placement_decimals: 2
+    raw_frame_topic: "vision/tuning_frames"
+    status_topic: "vision/serial_bridge_status"
+    hmi_rx_topic: "vision/hmi/rx_frame"
+    hmi_tx_topic: "vision/hmi/tx_bytes"
+    max_read_bytes: 256
+    max_queue_bytes: 4096
+    max_receive_frame_length: 256
+    gyro_frame_header: [90]
+    gyro_frame_length: 5
+    serial_enabled: true
+    vision_tx_enabled: false
+    placement_tx_enabled: true
+    gyro_forward_enabled: false
+    hmi_enabled: true
+    # Retained legacy TargetPoint path. It remains disabled by vision_tx_enabled=false.
+    target_topic: "vision/target_filtered"
+    vision_rate_hz: 60
+    target_timeout_ms: 100
+    vision_decimals: 2
+    coordinate_center_x: 640.0
+    coordinate_center_y: 360.0
+    width_normalizer_px: 720.0
+    minimum_confidence: 0.0
+    no_target_token: "N"
+    apply_width_weight: true
+    debug_mode: false
+
+hmi_control_node:
+  ros__parameters:
+    hmi_rx_topic: "vision/hmi/rx_frame"
+    hmi_tx_topic: "vision/hmi/tx_bytes"
+    hmi_status_topic: "vision/hmi/status"
+    hmi_command_topic: "vision/hmi/command"
+    task_command_topic: "puzzle/task_command"
+    ack_text: "vis ACK,1"
+    error_ack_text: "vis ACK,0"
+    # HMI screen values are persisted here. [cmd,val] writes the matching key
+    # before ACK; [get,cmd] reads this runtime cache. Values that existing nodes
+    # consume via vision/hmi/command can take effect immediately. flash persists
+    # first, then puzzle_perception_node reopens the camera with exposure 78/156.
+    # Launch-mode debug still takes effect on the next project start.
+    hmi_persistent_config_path: ""
+    hmi_value_debug: 1
+    # 0=short exposure_time_absolute 78; 1=long exposure_time_absolute 156.
+    hmi_value_flash: 0
+    hmi_value_opx: 1
+    hmi_value_light: 128
+    hmi_value_bound: 128
+    hmi_value_huidu: 128
+    hmi_value_HSVb: 128
+    hmi_value_HSVl: 128
+    hmi_value_confps: 1
+    hmi_value_losfps: 1
+    hmi_value_jumplmt: 50
+    hmi_value_CAl: 50
+    hmi_value_CAh: 150
+    hmi_value_thres: 80
+    debug_mode: false
+
+web_tuner_node:
+  ros__parameters:
+    result_topic: "puzzle/solver_status"
+    display_detection_source: ""
+    # Continuous debug preview: available in IDLE, scan, and solve states.
+    image_topic: "puzzle/image_debug"
+    # Solver preview draws moved target polygons; web auto-selects it during/after a task.
+    plan_image_topic: "puzzle/solver_image_debug"
+    plan_image_hold_sec: 60.0
+    camera_status_topic: "puzzle/perception_status"
+    yolo_status_topic: "puzzle/solver_status"
+    opencv_status_topic: "puzzle/perception_status"
+    serial_status_topic: "vision/serial_bridge_status"
+    task_command_topic: "puzzle/task_command"
+    task_status_topic: "puzzle/coordinator_status"
+    # Preserve annotation pixels in debug mode. The lower Web FPS bounds JPEG CPU and LAN load.
+    preview_fps: 20.0
+    preview_width: 1600
+    web_enabled: false
+    web_bind_address: "0.0.0.0"
+    web_port: 5000

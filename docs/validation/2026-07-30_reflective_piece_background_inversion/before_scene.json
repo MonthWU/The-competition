@@ -1,0 +1,8 @@
+{
+  "valid": false,
+  "status": "PIECE_COUNT_INVALID",
+  "a4_detected": true,
+  "piece_count": 0,
+  "image_width": 1920,
+  "image_height": 1080
+}

@@ -1,0 +1,11 @@
+uint8 REGION_UNKNOWN=0
+uint8 REGION_UPPER=1
+uint8 REGION_LOWER=2
+uint32 id
+uint8 region
+geometry_msgs/Point32[] polygon_a4_mm
+geometry_msgs/Point32 center_a4_mm
+geometry_msgs/Point32 pick_point_a4_mm
+float32 orientation_deg
+float32 area_mm2
+float32 confidence

@@ -1,0 +1,380 @@
+{
+  "input": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\test_data\\basic_photo\\source.jpg",
+  "image_width_px": 1280,
+  "image_height_px": 1707,
+  "baseline_green": {
+    "hsv": [
+      60,
+      78,
+      91,
+      90,
+      201,
+      245
+    ],
+    "largest_contour_area_px2": 0.0,
+    "a4_found": false
+  },
+  "tuned_green": {
+    "hsv": [
+      35,
+      80,
+      70,
+      75,
+      255,
+      255
+    ],
+    "largest_contour_area_px2": 903096.0,
+    "a4_quad_px": [
+      [
+        208.0,
+        314.0
+      ],
+      [
+        993.0,
+        311.0
+      ],
+      [
+        1013.0,
+        1430.0
+      ],
+      [
+        200.0,
+        1448.0
+      ]
+    ],
+    "hsv_note": "photo-specific candidate; re-sample on Jetson camera"
+  },
+  "warp": {
+    "width_px": 840,
+    "height_px": 1188,
+    "scale_px_per_mm": 4.0
+  },
+  "piece_count": 4,
+  "initial_upper_half_ok": true,
+  "template_match_pass": true,
+  "center_mapping_pass": true,
+  "assignment": {
+    "piece_to_template": {
+      "piece_1": "right_triangle",
+      "piece_2": "lower_quadrilateral",
+      "piece_3": "middle_quadrilateral",
+      "piece_4": "upper_quadrilateral"
+    },
+    "best_score": 8.303980478361446,
+    "second_score": 1008.3039804783615,
+    "score_margin": 1000.0
+  },
+  "pieces": [
+    {
+      "template": "right_triangle",
+      "source_center_a4_mm": [
+        155.37397318828909,
+        35.60791899493254
+      ],
+      "target_center_a4_mm": [
+        128.29223337819047,
+        212.7771658156421
+      ],
+      "ideal_target_center_a4_mm": [
+        128.33333333333334,
+        212.75
+      ],
+      "target_center_ideal_error_mm": 0.04926649827464899,
+      "source_center_inside": true,
+      "target_center_inside": true,
+      "source_center_image_px": [
+        792.9117431640625,
+        442.405517578125
+      ],
+      "target_center_image_px": [
+        697.1174926757812,
+        1110.5802001953125
+      ],
+      "center_delta_mm": [
+        -27.08173981009861,
+        177.16924682070956
+      ],
+      "rotation_delta_ccw_deg": 3.52737048329476,
+      "measured_area_mm2": 2522.21875,
+      "template_area_mm2": 2400.0,
+      "vertex_count": 3,
+      "fit_rms_mm": 1.7777686975323348,
+      "fit_max_vertex_error_mm": 2.139153565145444,
+      "source_polygon_mm": [
+        [
+          104.5,
+          12.0
+        ],
+        [
+          180.0,
+          79.0
+        ],
+        [
+          181.75,
+          15.75
+        ]
+      ],
+      "target_polygon_mm": [
+        [
+          76.06215444816426,
+          192.34401035209987
+        ],
+        [
+          155.54131953053354,
+          254.5719166145597
+        ],
+        [
+          153.3965260213023,
+          191.33407303334042
+        ]
+      ]
+    },
+    {
+      "template": "lower_quadrilateral",
+      "source_center_a4_mm": [
+        88.80987208251989,
+        100.24384694581232
+      ],
+      "target_center_a4_mm": [
+        95.61356851647459,
+        241.47604718703295
+      ],
+      "ideal_target_center_a4_mm": [
+        95.03921568627452,
+        241.16176470588235
+      ],
+      "target_center_ideal_error_mm": 0.6547172301971338,
+      "source_center_inside": true,
+      "target_center_inside": true,
+      "source_center_image_px": [
+        544.1549682617188,
+        684.8078002929688
+      ],
+      "target_center_image_px": [
+        572.3223266601562,
+        1223.720947265625
+      ],
+      "center_delta_mm": [
+        6.803696433954698,
+        141.23220024122062
+      ],
+      "rotation_delta_ccw_deg": -26.936639191918516,
+      "measured_area_mm2": 2144.9375,
+      "template_area_mm2": 2040.0,
+      "vertex_count": 4,
+      "fit_rms_mm": 1.023052905626539,
+      "fit_max_vertex_error_mm": 1.3106355806713021,
+      "source_polygon_mm": [
+        [
+          146.5,
+          84.0
+        ],
+        [
+          116.0,
+          78.25
+        ],
+        [
+          44.75,
+          101.25
+        ],
+        [
+          58.75,
+          128.75
+        ]
+      ],
+      "target_polygon_mm": [
+        [
+          154.40332286075548,
+          253.12843779468508
+        ],
+        [
+          129.81710620987695,
+          234.18561723395382
+        ],
+        [
+          55.878046632440444,
+          222.41370282701496
+        ],
+        [
+          55.90152429692713,
+          253.27224214434608
+        ]
+      ]
+    },
+    {
+      "template": "middle_quadrilateral",
+      "source_center_a4_mm": [
+        66.99701729249456,
+        67.00528732214141
+      ],
+      "target_center_a4_mm": [
+        89.31833836876169,
+        219.1756349918089
+      ],
+      "ideal_target_center_a4_mm": [
+        88.11111111111111,
+        219.52777777777777
+      ],
+      "target_center_ideal_error_mm": 1.2575381478605117,
+      "source_center_inside": true,
+      "target_center_inside": true,
+      "source_center_image_px": [
+        461.1651306152344,
+        561.1091918945312
+      ],
+      "target_center_image_px": [
+        547.7318725585938,
+        1137.7940673828125
+      ],
+      "center_delta_mm": [
+        22.321321076267125,
+        152.17034766966748
+      ],
+      "rotation_delta_ccw_deg": -18.673205075499993,
+      "measured_area_mm2": 1155.96875,
+      "template_area_mm2": 1080.0,
+      "vertex_count": 4,
+      "fit_rms_mm": 1.8299944607484542,
+      "fit_max_vertex_error_mm": 2.366424948872842,
+      "source_polygon_mm": [
+        [
+          32.75,
+          74.25
+        ],
+        [
+          36.25,
+          80.0
+        ],
+        [
+          110.25,
+          69.25
+        ],
+        [
+          64.25,
+          51.0
+        ]
+      ],
+      "target_polygon_mm": [
+        [
+          54.55454069497411,
+          215.0741198433415
+        ],
+        [
+          56.029323681516445,
+          221.64203542917275
+        ],
+        [
+          129.57579928641405,
+          235.15049300575058
+        ],
+        [
+          91.84033633709541,
+          203.1333517217352
+        ]
+      ]
+    },
+    {
+      "template": "upper_quadrilateral",
+      "source_center_a4_mm": [
+        49.87714359951498,
+        31.04390649960544
+      ],
+      "target_center_a4_mm": [
+        68.77933885203765,
+        201.6619553210734
+      ],
+      "ideal_target_center_a4_mm": [
+        68.66666666666667,
+        201.75
+      ],
+      "target_center_ideal_error_mm": 0.14299261115022663,
+      "source_center_inside": true,
+      "target_center_inside": true,
+      "source_center_image_px": [
+        396.3673095703125,
+        427.8515930175781
+      ],
+      "target_center_image_px": [
+        468.5252380371094,
+        1071.5518798828125
+      ],
+      "center_delta_mm": [
+        18.902195252522674,
+        170.61804882146797
+      ],
+      "rotation_delta_ccw_deg": -25.263098504499112,
+      "measured_area_mm2": 541.21875,
+      "template_area_mm2": 480.0,
+      "vertex_count": 4,
+      "fit_rms_mm": 0.6707151361316785,
+      "fit_max_vertex_error_mm": 0.9434220245978726,
+      "source_polygon_mm": [
+        [
+          72.0,
+          24.75
+        ],
+        [
+          51.25,
+          19.5
+        ],
+        [
+          33.25,
+          29.0
+        ],
+        [
+          42.25,
+          47.25
+        ]
+      ],
+      "target_polygon_mm": [
+        [
+          91.47239732077838,
+          205.41150618438644
+        ],
+        [
+          74.94754842190446,
+          191.80803718308437
+        ],
+        [
+          54.61474433480427,
+          192.71747544685024
+        ],
+        [
+          54.96530992251289,
+          213.062981185679
+        ]
+      ]
+    }
+  ],
+  "target_geometry": {
+    "ideal_template_width_mm": 100.0,
+    "ideal_template_height_mm": 60.0,
+    "offset_mm": [
+      55.0,
+      192.75
+    ],
+    "ideal_template_union_area_mm2": 6000.0,
+    "ideal_template_rectangle_closure": true,
+    "measured_rigid_assembly": {
+      "resolution_mm": 0.1,
+      "bbox_width_mm": 100.98677883555943,
+      "bbox_height_mm": 63.237843581219295,
+      "bbox_error_mm": 3.2378435812192947,
+      "union_area_mm2": 6026.240000000002,
+      "intersection_area_mm2": 5892.060000000001,
+      "hole_area_mm2": 107.94000000000003,
+      "outside_area_mm2": 134.18000000000004,
+      "overlap_area_mm2": 68.38000000000001,
+      "rectangularity": 0.9777340431180969,
+      "target_coverage": 0.9820100000000003,
+      "coarse_rectangle_pass": true,
+      "strict_rectangle_closure": false
+    }
+  },
+  "decision": "RETRY_CONTOUR_REFINEMENT",
+  "warnings": [
+    "Existing competition_tuning.yaml green H=60..90 fails on this photo; use the tuned candidate only as a starting point.",
+    "workspace_mapping_valid remains false; coordinates are A4-local mm for tuning and must not be sent as workspace-absolute control coordinates.",
+    "Rectangle check is the planned target geometry; final post-placement re-scan is still required on Jetson."
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "background_lab": [
+    138.0,
+    104.0,
+    158.0
+  ],
+  "background_mad": 7.14,
+  "masks": {
+    "lab": [
+      {
+        "area_mm2": 1867.4,
+        "bbox": [
+          136,
+          23,
+          163,
+          122
+        ],
+        "center_mm": [
+          72.5,
+          28.0
+        ],
+        "valid": true,
+        "status": "OK",
+        "vertices": 5,
+        "rms_px": 1.18,
+        "rms_mm": 0.39,
+        "max_px": 4.3,
+        "max_mm": 1.43,
+        "eps_px": 6.0
+      },
+      {
+        "area_mm2": 1972.1,
+        "bbox": [
+          430,
+          46,
+          169,
+          193
+        ],
+        "center_mm": [
+          171.5,
+          47.5
+        ],
+        "valid": true,
+        "status": "OK",
+        "vertices": 4,
+        "rms_px": 1.43,
+        "rms_mm": 0.48,
+        "max_px": 4.69,
+        "max_mm": 1.56,
+        "eps_px": 6.0
+      },
+      {
+        "area_mm2": 1950.3,
+        "bbox": [
+          272,
+          134,
+          155,
+          187
+        ],
+        "center_mm": [
+          116.5,
+          75.8
+        ],
+        "valid": false,
+        "status": "POLYGON_APPROX_INVALID"
+      },
+      {
+        "area_mm2": 1952.7,
+        "bbox": [
+          68,
+          170,
+          181,
+          149
+        ],
+        "center_mm": [
+          52.8,
+          81.5
+        ],
+        "valid": false,
+        "status": "POLYGON_APPROX_INVALID"
+      }
+    ],
+    "canny": [],
+    "union": [
+      {
+        "area_mm2": 1867.6,
+        "bbox": [
+          136,
+          23,
+          163,
+          122
+        ],
+        "center_mm": [
+          72.5,
+          28.0
+        ],
+        "valid": true,
+        "status": "OK",
+        "vertices": 5,
+        "rms_px": 1.18,
+        "rms_mm": 0.39,
+        "max_px": 4.3,
+        "max_mm": 1.43,
+        "eps_px": 6.0
+      },
+      {
+        "area_mm2": 2050.6,
+        "bbox": [
+          422,
+          46,
+          177,
+          197
+        ],
+        "center_mm": [
+          170.2,
+          48.2
+        ],
+        "valid": false,
+        "status": "POLYGON_APPROX_INVALID"
+      },
+      {
+        "area_mm2": 1952.3,
+        "bbox": [
+          272,
+          134,
+          155,
+          187
+        ],
+        "center_mm": [
+          116.5,
+          75.8
+        ],
+        "valid": false,
+        "status": "POLYGON_APPROX_INVALID"
+      },
+      {
+        "area_mm2": 1961.1,
+        "bbox": [
+          68,
+          170,
+          181,
+          149
+        ],
+        "center_mm": [
+          52.8,
+          81.5
+        ],
+        "valid": false,
+        "status": "POLYGON_APPROX_INVALID"
+      }
+    ]
+  }
+}

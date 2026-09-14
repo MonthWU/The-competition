@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>puzzle_solver_node</name>
+  <version>0.1.0</version>
+  <description>Subset-DP polygon puzzle solver with geometry and optional seam texture scoring.</description>
+  <maintainer email="monthwu@example.com">MonthWU</maintainer>
+  <license>Proprietary</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>vision_interfaces</depend>
+  <depend>puzzle_geometry</depend>
+  <depend>opencv</depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export><build_type>ament_cmake</build_type></export>
+</package>

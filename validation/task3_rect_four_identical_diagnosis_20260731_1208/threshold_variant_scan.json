@@ -1,0 +1,2056 @@
+{
+  "background_lab": [
+    138.0,
+    104.0,
+    158.0
+  ],
+  "threshold_scan": [
+    {
+      "lab_threshold": 10,
+      "eps2_v5": {
+        "contours": 3,
+        "approx_pass": 1,
+        "rows": [
+          {
+            "area": 2184.4,
+            "vertices": 4,
+            "bbox": [
+              65,
+              165,
+              188,
+              157
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1125.0,
+            "vertices": 20,
+            "bbox": [
+              10,
+              333,
+              183,
+              106
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 5056.2,
+            "vertices": 63,
+            "bbox": [
+              10,
+              454,
+              237,
+              277
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 3,
+        "approx_pass": 1,
+        "rows": [
+          {
+            "area": 2184.4,
+            "vertices": 4,
+            "bbox": [
+              65,
+              165,
+              188,
+              157
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1125.0,
+            "vertices": 14,
+            "bbox": [
+              10,
+              333,
+              183,
+              106
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 5056.2,
+            "vertices": 41,
+            "bbox": [
+              10,
+              454,
+              237,
+              277
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 3,
+        "approx_pass": 1,
+        "rows": [
+          {
+            "area": 2184.4,
+            "vertices": 4,
+            "bbox": [
+              65,
+              165,
+              188,
+              157
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1125.0,
+            "vertices": 11,
+            "bbox": [
+              10,
+              333,
+              183,
+              106
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 5056.2,
+            "vertices": 26,
+            "bbox": [
+              10,
+              454,
+              237,
+              277
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 12,
+      "eps2_v5": {
+        "contours": 4,
+        "approx_pass": 1,
+        "rows": [
+          {
+            "area": 11264.9,
+            "vertices": 73,
+            "bbox": [
+              133,
+              10,
+              487,
+              315
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2156.0,
+            "vertices": 4,
+            "bbox": [
+              65,
+              166,
+              187,
+              156
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 756.1,
+            "vertices": 21,
+            "bbox": [
+              10,
+              336,
+              153,
+              103
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 3838.9,
+            "vertices": 48,
+            "bbox": [
+              10,
+              454,
+              188,
+              256
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 4,
+        "approx_pass": 1,
+        "rows": [
+          {
+            "area": 11264.9,
+            "vertices": 56,
+            "bbox": [
+              133,
+              10,
+              487,
+              315
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2156.0,
+            "vertices": 4,
+            "bbox": [
+              65,
+              166,
+              187,
+              156
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 756.1,
+            "vertices": 13,
+            "bbox": [
+              10,
+              336,
+              153,
+              103
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 3838.9,
+            "vertices": 37,
+            "bbox": [
+              10,
+              454,
+              188,
+              256
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 4,
+        "approx_pass": 1,
+        "rows": [
+          {
+            "area": 11264.9,
+            "vertices": 41,
+            "bbox": [
+              133,
+              10,
+              487,
+              315
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2156.0,
+            "vertices": 4,
+            "bbox": [
+              65,
+              166,
+              187,
+              156
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 756.1,
+            "vertices": 7,
+            "bbox": [
+              10,
+              336,
+              153,
+              103
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 3838.9,
+            "vertices": 23,
+            "bbox": [
+              10,
+              454,
+              188,
+              256
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 14,
+      "eps2_v5": {
+        "contours": 6,
+        "approx_pass": 2,
+        "rows": [
+          {
+            "area": 2096.9,
+            "vertices": 14,
+            "bbox": [
+              134,
+              10,
+              195,
+              136
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 4220.1,
+            "vertices": 44,
+            "bbox": [
+              376,
+              10,
+              244,
+              232
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2130.4,
+            "vertices": 5,
+            "bbox": [
+              269,
+              131,
+              162,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2125.3,
+            "vertices": 4,
+            "bbox": [
+              66,
+              167,
+              186,
+              154
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 474.3,
+            "vertices": 17,
+            "bbox": [
+              10,
+              358,
+              147,
+              81
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2913.1,
+            "vertices": 47,
+            "bbox": [
+              10,
+              454,
+              169,
+              249
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 6,
+        "approx_pass": 2,
+        "rows": [
+          {
+            "area": 2096.9,
+            "vertices": 8,
+            "bbox": [
+              134,
+              10,
+              195,
+              136
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 4220.1,
+            "vertices": 29,
+            "bbox": [
+              376,
+              10,
+              244,
+              232
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2130.4,
+            "vertices": 4,
+            "bbox": [
+              269,
+              131,
+              162,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2125.3,
+            "vertices": 4,
+            "bbox": [
+              66,
+              167,
+              186,
+              154
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 474.3,
+            "vertices": 12,
+            "bbox": [
+              10,
+              358,
+              147,
+              81
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2913.1,
+            "vertices": 28,
+            "bbox": [
+              10,
+              454,
+              169,
+              249
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 6,
+        "approx_pass": 3,
+        "rows": [
+          {
+            "area": 2096.9,
+            "vertices": 7,
+            "bbox": [
+              134,
+              10,
+              195,
+              136
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 4220.1,
+            "vertices": 22,
+            "bbox": [
+              376,
+              10,
+              244,
+              232
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2130.4,
+            "vertices": 4,
+            "bbox": [
+              269,
+              131,
+              162,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2125.3,
+            "vertices": 4,
+            "bbox": [
+              66,
+              167,
+              186,
+              154
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 474.3,
+            "vertices": 6,
+            "bbox": [
+              10,
+              358,
+              147,
+              81
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2913.1,
+            "vertices": 23,
+            "bbox": [
+              10,
+              454,
+              169,
+              249
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 16,
+      "eps2_v5": {
+        "contours": 6,
+        "approx_pass": 3,
+        "rows": [
+          {
+            "area": 2818.1,
+            "vertices": 43,
+            "bbox": [
+              428,
+              10,
+              192,
+              232
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2014.1,
+            "vertices": 4,
+            "bbox": [
+              134,
+              21,
+              166,
+              125
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2101.3,
+            "vertices": 5,
+            "bbox": [
+              270,
+              132,
+              159,
+              192
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2095.4,
+            "vertices": 4,
+            "bbox": [
+              66,
+              168,
+              186,
+              152
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 120.1,
+            "vertices": 10,
+            "bbox": [
+              10,
+              395,
+              46,
+              44
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1946.9,
+            "vertices": 49,
+            "bbox": [
+              10,
+              454,
+              120,
+              212
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 6,
+        "approx_pass": 3,
+        "rows": [
+          {
+            "area": 2818.1,
+            "vertices": 31,
+            "bbox": [
+              428,
+              10,
+              192,
+              232
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2014.1,
+            "vertices": 4,
+            "bbox": [
+              134,
+              21,
+              166,
+              125
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2101.3,
+            "vertices": 4,
+            "bbox": [
+              270,
+              132,
+              159,
+              192
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2095.4,
+            "vertices": 4,
+            "bbox": [
+              66,
+              168,
+              186,
+              152
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 120.1,
+            "vertices": 7,
+            "bbox": [
+              10,
+              395,
+              46,
+              44
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1946.9,
+            "vertices": 28,
+            "bbox": [
+              10,
+              454,
+              120,
+              212
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 6,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 2818.1,
+            "vertices": 17,
+            "bbox": [
+              428,
+              10,
+              192,
+              232
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 2014.1,
+            "vertices": 4,
+            "bbox": [
+              134,
+              21,
+              166,
+              125
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2101.3,
+            "vertices": 4,
+            "bbox": [
+              270,
+              132,
+              159,
+              192
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2095.4,
+            "vertices": 4,
+            "bbox": [
+              66,
+              168,
+              186,
+              152
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 120.1,
+            "vertices": 6,
+            "bbox": [
+              10,
+              395,
+              46,
+              44
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1946.9,
+            "vertices": 21,
+            "bbox": [
+              10,
+              454,
+              120,
+              212
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 18,
+      "eps2_v5": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1991.4,
+            "vertices": 4,
+            "bbox": [
+              135,
+              22,
+              165,
+              124
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2094.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              44,
+              172,
+              198
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2073.7,
+            "vertices": 5,
+            "bbox": [
+              270,
+              133,
+              159,
+              191
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2073.9,
+            "vertices": 5,
+            "bbox": [
+              66,
+              169,
+              185,
+              151
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1246.7,
+            "vertices": 33,
+            "bbox": [
+              10,
+              454,
+              97,
+              204
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1991.4,
+            "vertices": 4,
+            "bbox": [
+              135,
+              22,
+              165,
+              124
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2094.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              44,
+              172,
+              198
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2073.7,
+            "vertices": 4,
+            "bbox": [
+              270,
+              133,
+              159,
+              191
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2073.9,
+            "vertices": 4,
+            "bbox": [
+              66,
+              169,
+              185,
+              151
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1246.7,
+            "vertices": 19,
+            "bbox": [
+              10,
+              454,
+              97,
+              204
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1991.4,
+            "vertices": 4,
+            "bbox": [
+              135,
+              22,
+              165,
+              124
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2094.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              44,
+              172,
+              198
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2073.7,
+            "vertices": 4,
+            "bbox": [
+              270,
+              133,
+              159,
+              191
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2073.9,
+            "vertices": 4,
+            "bbox": [
+              66,
+              169,
+              185,
+              151
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1246.7,
+            "vertices": 12,
+            "bbox": [
+              10,
+              454,
+              97,
+              204
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 20,
+      "eps2_v5": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1960.8,
+            "vertices": 5,
+            "bbox": [
+              135,
+              22,
+              165,
+              124
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2061.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              45,
+              172,
+              197
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2038.1,
+            "vertices": 5,
+            "bbox": [
+              270,
+              133,
+              158,
+              190
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2038.7,
+            "vertices": 4,
+            "bbox": [
+              67,
+              169,
+              183,
+              151
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 636.4,
+            "vertices": 24,
+            "bbox": [
+              10,
+              454,
+              52,
+              196
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1960.8,
+            "vertices": 4,
+            "bbox": [
+              135,
+              22,
+              165,
+              124
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2061.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              45,
+              172,
+              197
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2038.1,
+            "vertices": 4,
+            "bbox": [
+              270,
+              133,
+              158,
+              190
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2038.7,
+            "vertices": 4,
+            "bbox": [
+              67,
+              169,
+              183,
+              151
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 636.4,
+            "vertices": 13,
+            "bbox": [
+              10,
+              454,
+              52,
+              196
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1960.8,
+            "vertices": 4,
+            "bbox": [
+              135,
+              22,
+              165,
+              124
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2061.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              45,
+              172,
+              197
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2038.1,
+            "vertices": 4,
+            "bbox": [
+              270,
+              133,
+              158,
+              190
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2038.7,
+            "vertices": 4,
+            "bbox": [
+              67,
+              169,
+              183,
+              151
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 636.4,
+            "vertices": 9,
+            "bbox": [
+              10,
+              454,
+              52,
+              196
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 22,
+      "eps2_v5": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1917.1,
+            "vertices": 5,
+            "bbox": [
+              136,
+              23,
+              163,
+              122
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2021.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              45,
+              171,
+              196
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2002.8,
+            "vertices": 5,
+            "bbox": [
+              271,
+              134,
+              157,
+              189
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2002.3,
+            "vertices": 4,
+            "bbox": [
+              67,
+              170,
+              183,
+              149
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 282.9,
+            "vertices": 16,
+            "bbox": [
+              10,
+              490,
+              39,
+              149
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1917.1,
+            "vertices": 4,
+            "bbox": [
+              136,
+              23,
+              163,
+              122
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2021.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              45,
+              171,
+              196
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2002.8,
+            "vertices": 4,
+            "bbox": [
+              271,
+              134,
+              157,
+              189
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2002.3,
+            "vertices": 4,
+            "bbox": [
+              67,
+              170,
+              183,
+              149
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 282.9,
+            "vertices": 10,
+            "bbox": [
+              10,
+              490,
+              39,
+              149
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 5,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1917.1,
+            "vertices": 4,
+            "bbox": [
+              136,
+              23,
+              163,
+              122
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2021.8,
+            "vertices": 4,
+            "bbox": [
+              429,
+              45,
+              171,
+              196
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2002.8,
+            "vertices": 4,
+            "bbox": [
+              271,
+              134,
+              157,
+              189
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 2002.3,
+            "vertices": 4,
+            "bbox": [
+              67,
+              170,
+              183,
+              149
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 282.9,
+            "vertices": 8,
+            "bbox": [
+              10,
+              490,
+              39,
+              149
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 24,
+      "eps2_v5": {
+        "contours": 4,
+        "approx_pass": 2,
+        "rows": [
+          {
+            "area": 1867.4,
+            "vertices": 5,
+            "bbox": [
+              136,
+              23,
+              163,
+              122
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1972.1,
+            "vertices": 4,
+            "bbox": [
+              430,
+              46,
+              169,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1950.3,
+            "vertices": 8,
+            "bbox": [
+              272,
+              134,
+              155,
+              187
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1952.7,
+            "vertices": 6,
+            "bbox": [
+              68,
+              170,
+              181,
+              149
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 4,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1867.4,
+            "vertices": 4,
+            "bbox": [
+              136,
+              23,
+              163,
+              122
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1972.1,
+            "vertices": 4,
+            "bbox": [
+              430,
+              46,
+              169,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1950.3,
+            "vertices": 4,
+            "bbox": [
+              272,
+              134,
+              155,
+              187
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1952.7,
+            "vertices": 4,
+            "bbox": [
+              68,
+              170,
+              181,
+              149
+            ],
+            "approx_pass": true
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 4,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1867.4,
+            "vertices": 4,
+            "bbox": [
+              136,
+              23,
+              163,
+              122
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1972.1,
+            "vertices": 4,
+            "bbox": [
+              430,
+              46,
+              169,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1950.3,
+            "vertices": 4,
+            "bbox": [
+              272,
+              134,
+              155,
+              187
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1952.7,
+            "vertices": 4,
+            "bbox": [
+              68,
+              170,
+              181,
+              149
+            ],
+            "approx_pass": true
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 26,
+      "eps2_v5": {
+        "contours": 4,
+        "approx_pass": 0,
+        "rows": [
+          {
+            "area": 1784.8,
+            "vertices": 9,
+            "bbox": [
+              139,
+              23,
+              159,
+              121
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1911.6,
+            "vertices": 9,
+            "bbox": [
+              434,
+              46,
+              165,
+              193
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1831.2,
+            "vertices": 17,
+            "bbox": [
+              274,
+              141,
+              152,
+              179
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1871.8,
+            "vertices": 10,
+            "bbox": [
+              69,
+              176,
+              180,
+              141
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 4,
+        "approx_pass": 2,
+        "rows": [
+          {
+            "area": 1784.8,
+            "vertices": 6,
+            "bbox": [
+              139,
+              23,
+              159,
+              121
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1911.6,
+            "vertices": 5,
+            "bbox": [
+              434,
+              46,
+              165,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1831.2,
+            "vertices": 10,
+            "bbox": [
+              274,
+              141,
+              152,
+              179
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1871.8,
+            "vertices": 5,
+            "bbox": [
+              69,
+              176,
+              180,
+              141
+            ],
+            "approx_pass": true
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 4,
+        "approx_pass": 4,
+        "rows": [
+          {
+            "area": 1784.8,
+            "vertices": 4,
+            "bbox": [
+              139,
+              23,
+              159,
+              121
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1911.6,
+            "vertices": 4,
+            "bbox": [
+              434,
+              46,
+              165,
+              193
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1831.2,
+            "vertices": 4,
+            "bbox": [
+              274,
+              141,
+              152,
+              179
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 1871.8,
+            "vertices": 4,
+            "bbox": [
+              69,
+              176,
+              180,
+              141
+            ],
+            "approx_pass": true
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 28,
+      "eps2_v5": {
+        "contours": 4,
+        "approx_pass": 0,
+        "rows": [
+          {
+            "area": 1633.1,
+            "vertices": 14,
+            "bbox": [
+              140,
+              27,
+              158,
+              117
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1502.8,
+            "vertices": 32,
+            "bbox": [
+              436,
+              46,
+              150,
+              193
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1217.1,
+            "vertices": 56,
+            "bbox": [
+              276,
+              143,
+              146,
+              174
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1300.3,
+            "vertices": 32,
+            "bbox": [
+              74,
+              186,
+              170,
+              120
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 4,
+        "approx_pass": 0,
+        "rows": [
+          {
+            "area": 1633.1,
+            "vertices": 12,
+            "bbox": [
+              140,
+              27,
+              158,
+              117
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1502.8,
+            "vertices": 21,
+            "bbox": [
+              436,
+              46,
+              150,
+              193
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1217.1,
+            "vertices": 26,
+            "bbox": [
+              276,
+              143,
+              146,
+              174
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1300.3,
+            "vertices": 21,
+            "bbox": [
+              74,
+              186,
+              170,
+              120
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 4,
+        "approx_pass": 0,
+        "rows": [
+          {
+            "area": 1633.1,
+            "vertices": 11,
+            "bbox": [
+              140,
+              27,
+              158,
+              117
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1502.8,
+            "vertices": 14,
+            "bbox": [
+              436,
+              46,
+              150,
+              193
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1217.1,
+            "vertices": 19,
+            "bbox": [
+              276,
+              143,
+              146,
+              174
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 1300.3,
+            "vertices": 15,
+            "bbox": [
+              74,
+              186,
+              170,
+              120
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    },
+    {
+      "lab_threshold": 30,
+      "eps2_v5": {
+        "contours": 7,
+        "approx_pass": 0,
+        "rows": [
+          {
+            "area": 273.1,
+            "vertices": 20,
+            "bbox": [
+              208,
+              28,
+              85,
+              77
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 568.1,
+            "vertices": 32,
+            "bbox": [
+              443,
+              55,
+              107,
+              119
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 203.1,
+            "vertices": 14,
+            "bbox": [
+              167,
+              98,
+              99,
+              45
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 187.6,
+            "vertices": 10,
+            "bbox": [
+              536,
+              108,
+              50,
+              71
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 160.2,
+            "vertices": 12,
+            "bbox": [
+              305,
+              145,
+              54,
+              69
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 195.8,
+            "vertices": 14,
+            "bbox": [
+              353,
+              200,
+              66,
+              90
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 337.1,
+            "vertices": 30,
+            "bbox": [
+              78,
+              228,
+              148,
+              64
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps3_v5": {
+        "contours": 7,
+        "approx_pass": 0,
+        "rows": [
+          {
+            "area": 273.1,
+            "vertices": 12,
+            "bbox": [
+              208,
+              28,
+              85,
+              77
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 568.1,
+            "vertices": 23,
+            "bbox": [
+              443,
+              55,
+              107,
+              119
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 203.1,
+            "vertices": 7,
+            "bbox": [
+              167,
+              98,
+              99,
+              45
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 187.6,
+            "vertices": 6,
+            "bbox": [
+              536,
+              108,
+              50,
+              71
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 160.2,
+            "vertices": 9,
+            "bbox": [
+              305,
+              145,
+              54,
+              69
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 195.8,
+            "vertices": 10,
+            "bbox": [
+              353,
+              200,
+              66,
+              90
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 337.1,
+            "vertices": 19,
+            "bbox": [
+              78,
+              228,
+              148,
+              64
+            ],
+            "approx_pass": false
+          }
+        ]
+      },
+      "eps4_v6": {
+        "contours": 7,
+        "approx_pass": 3,
+        "rows": [
+          {
+            "area": 273.1,
+            "vertices": 10,
+            "bbox": [
+              208,
+              28,
+              85,
+              77
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 568.1,
+            "vertices": 18,
+            "bbox": [
+              443,
+              55,
+              107,
+              119
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 203.1,
+            "vertices": 5,
+            "bbox": [
+              167,
+              98,
+              99,
+              45
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 187.6,
+            "vertices": 4,
+            "bbox": [
+              536,
+              108,
+              50,
+              71
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 160.2,
+            "vertices": 4,
+            "bbox": [
+              305,
+              145,
+              54,
+              69
+            ],
+            "approx_pass": true
+          },
+          {
+            "area": 195.8,
+            "vertices": 7,
+            "bbox": [
+              353,
+              200,
+              66,
+              90
+            ],
+            "approx_pass": false
+          },
+          {
+            "area": 337.1,
+            "vertices": 13,
+            "bbox": [
+              78,
+              228,
+              148,
+              64
+            ],
+            "approx_pass": false
+          }
+        ]
+      }
+    }
+  ],
+  "roi_foreground_percent": [
+    {
+      "threshold": 12,
+      "top_fg_pct": 93.5,
+      "top_dist_median": 29.3,
+      "left_fg_pct": 51.2,
+      "left_dist_median": 16.4,
+      "middle_fg_pct": 73.1,
+      "middle_dist_median": 27.5,
+      "right_fg_pct": 95.6,
+      "right_dist_median": 28.9,
+      "bg_fg_pct": 4.1,
+      "bg_dist_median": 5.1
+    },
+    {
+      "threshold": 16,
+      "top_fg_pct": 91.1,
+      "top_dist_median": 29.3,
+      "left_fg_pct": 50.1,
+      "left_dist_median": 16.4,
+      "middle_fg_pct": 69.2,
+      "middle_dist_median": 27.5,
+      "right_fg_pct": 83.4,
+      "right_dist_median": 28.9,
+      "bg_fg_pct": 0.0,
+      "bg_dist_median": 5.1
+    },
+    {
+      "threshold": 20,
+      "top_fg_pct": 89.4,
+      "top_dist_median": 29.3,
+      "left_fg_pct": 49.1,
+      "left_dist_median": 16.4,
+      "middle_fg_pct": 67.9,
+      "middle_dist_median": 27.5,
+      "right_fg_pct": 75.1,
+      "right_dist_median": 28.9,
+      "bg_fg_pct": 0.0,
+      "bg_dist_median": 5.1
+    },
+    {
+      "threshold": 24,
+      "top_fg_pct": 86.0,
+      "top_dist_median": 29.3,
+      "left_fg_pct": 47.5,
+      "left_dist_median": 16.4,
+      "middle_fg_pct": 66.2,
+      "middle_dist_median": 27.5,
+      "right_fg_pct": 73.1,
+      "right_dist_median": 28.9,
+      "bg_fg_pct": 0.0,
+      "bg_dist_median": 5.1
+    },
+    {
+      "threshold": 28,
+      "top_fg_pct": 68.3,
+      "top_dist_median": 29.3,
+      "left_fg_pct": 33.4,
+      "left_dist_median": 16.4,
+      "middle_fg_pct": 41.9,
+      "middle_dist_median": 27.5,
+      "right_fg_pct": 57.2,
+      "right_dist_median": 28.9,
+      "bg_fg_pct": 0.0,
+      "bg_dist_median": 5.1
+    }
+  ]
+}

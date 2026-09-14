@@ -1,0 +1,10 @@
+std_msgs/Header header
+uint8 task_id
+uint32 generation
+bool solved
+string status
+float32 target_width_mm
+float32 target_height_mm
+float32 score
+float32 score_margin
+vision_interfaces/PuzzlePlacement[] placements

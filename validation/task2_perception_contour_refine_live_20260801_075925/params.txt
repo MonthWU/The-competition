@@ -1,0 +1,9 @@
+Integer value is: 1
+Integer value is: 2
+Double value is: 20.0
+Boolean value is: True
+Boolean value is: True
+Boolean value is: True
+Set parameter successful
+Set parameter successful
+Boolean value is: True

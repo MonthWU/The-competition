@@ -1,0 +1,26 @@
+[
+  {
+    "path": "src\\puzzle_perception_node\\src\\puzzle_perception_node.cpp",
+    "sha256": "4FEDF3733857168120FF43AC5FEF8C5FB9C3C8E963B6C3FFDDEA4A625EC9FB8B"
+  },
+  {
+    "path": "src\\vision_bringup\\config\\competition_tuning.yaml",
+    "sha256": "5D3DB40E4F64C89AA01BA20855F3AE423AAB280E0F18394B4584C0B183D07538"
+  },
+  {
+    "path": "src\\vision_bringup\\config\\vision_system.yaml",
+    "sha256": "0490ED00328EA633EC8F2FA9928C7EC13630E6BD6F8AA26E041B5BA17CD04115"
+  },
+  {
+    "path": "src\\puzzle_solver_node\\src\\puzzle_solver_core.cpp",
+    "sha256": "D0F3E468F1D6581A2404FB8714C25E013130B48DD292B96938412F13A1C4F18B"
+  },
+  {
+    "path": "src\\puzzle_solver_node\\include\\puzzle_solver_node\\puzzle_solver_core.hpp",
+    "sha256": "ECC6CD865E8B5200030054C40EE251E1FA24656DEC7AE0DDFD39B83A8EE1CCC6"
+  },
+  {
+    "path": "src\\puzzle_solver_node\\test\\test_puzzle_solver_core.cpp",
+    "sha256": "E2FE91D401CA5A0A315A2C110BE29D6CD8B51BD6E0A0DB8393A58B9B4187B172"
+  }
+]

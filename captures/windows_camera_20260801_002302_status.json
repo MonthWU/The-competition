@@ -1,0 +1,17 @@
+{
+  "saved": true,
+  "image_path": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\captures\\windows_camera_20260801_002302.jpg",
+  "status_path": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\captures\\windows_camera_20260801_002302_status.json",
+  "timestamp": "20260801_002302",
+  "attempts": [
+    {
+      "index": 0,
+      "backend": "CAP_DSHOW",
+      "opened": true,
+      "read": true,
+      "width": 1920,
+      "height": 1080,
+      "saved": true
+    }
+  ]
+}

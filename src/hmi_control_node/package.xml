@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>hmi_control_node</name>
+  <version>0.1.0</version>
+  <description>HMI command parser and response node for the Jetson vision tuning screen.</description>
+  <maintainer email="monthwu@example.com">MonthWU</maintainer>
+  <license>Proprietary</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>ament_index_python</depend>
+  <exec_depend>python3-yaml</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

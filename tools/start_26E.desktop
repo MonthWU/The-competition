@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=start_26E
+Comment=启动 26E debug 项目并打开 Web 预览
+Exec=/home/jetson/ProjectsByMonthWU/VisionJetson/Copyfiles/26E_vision/tools/start_26E.sh
+Path=/home/jetson/ProjectsByMonthWU/VisionJetson/Copyfiles/26E_vision
+Icon=camera-photo
+Terminal=true
+StartupNotify=true
+Categories=Development;Utility;

@@ -1,0 +1,35 @@
+{
+  "jetson_identity": {
+    "architecture": "aarch64",
+    "hostname": "monthwu-jetson",
+    "user": "jetson",
+    "opencv_python": "4.5.4"
+  },
+  "official20_filtered": {
+    "input_piece_count": 3,
+    "texture_image_supplied": true,
+    "solved": false,
+    "status": "NO_VALID_RECTANGLE",
+    "target_width_mm": 0.0,
+    "target_height_mm": 0.0,
+    "score": 0.0,
+    "score_margin": 0.0,
+    "placements": []
+  },
+  "current5_all": {
+    "input_piece_count": 4,
+    "texture_image_supplied": true,
+    "solved": false,
+    "status": "TIMEOUT_35S",
+    "timeout_sec": 35.0,
+    "configured_plan_timeout_sec": 30.0,
+    "placements": []
+  },
+  "cleanup": {
+    "nodes_after": [],
+    "solver_process_present": false,
+    "temporary_harness_removed": true,
+    "temporary_rectified_image_removed": true,
+    "source_or_config_deployed": false
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "input": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\test_data\\basic_photo\\source.jpg",
+  "task": "challenge_two_patterned_geometry",
+  "basic_template_used": false,
+  "camera_calibration_valid": false,
+  "strict_entry_status": "CALIBRATION_REQUIRED",
+  "official_minimum_edge_mm": 20.0,
+  "implementation_minimum_edge_mm": 5.0,
+  "edge_gate_configuration_conflict": true,
+  "green_baseline_found": false,
+  "green_photo_tuned_hsv": [
+    35,
+    80,
+    70,
+    75,
+    255,
+    255
+  ],
+  "current_centers_valid": true,
+  "official_valid_piece_count": 3,
+  "implementation_valid_piece_count": 4,
+  "pattern_evidence_present": false,
+  "pieces": [
+    {
+      "piece_id": 1,
+      "source_center_a4_mm": [
+        155.37397318828909,
+        35.60791899493254
+      ],
+      "source_polygon_mm": [
+        [
+          104.5,
+          12.0
+        ],
+        [
+          180.0,
+          79.0
+        ],
+        [
+          181.75,
+          15.75
+        ]
+      ],
+      "center_inside": true,
+      "center_boundary_clearance_mm": 16.109862020176088,
+      "edge_lengths_mm": [
+        100.9418149232517,
+        63.27420485474314,
+        77.34096585898058
+      ],
+      "minimum_edge_mm": 63.27420485474314,
+      "official_edge_gate_pass": true,
+      "implementation_edge_gate_pass": true,
+      "texture": {
+        "interior_pixel_count": 30834,
+        "gray_mean": 228.73234092235845,
+        "gray_std": 2.0662630847129773,
+        "dark_pixel_ratio": 0.0,
+        "saturated_pixel_ratio": 0.0,
+        "strong_gradient_ratio": 0.00016215865602905882,
+        "pattern_evidence_present": false
+      }
+    },
+    {
+      "piece_id": 2,
+      "source_center_a4_mm": [
+        88.80987208251989,
+        100.24384694581232
+      ],
+      "source_polygon_mm": [
+        [
+          146.5,
+          84.0
+        ],
+        [
+          116.0,
+          78.25
+        ],
+        [
+          44.75,
+          101.25
+        ],
+        [
+          58.75,
+          128.75
+        ]
+      ],
+      "center_inside": true,
+      "center_boundary_clearance_mm": 11.738201301480336,
+      "edge_lengths_mm": [
+        31.037275975832674,
+        74.87030452722895,
+        30.858548248418945,
+        98.50190353490638
+      ],
+      "minimum_edge_mm": 30.858548248418945,
+      "official_edge_gate_pass": true,
+      "implementation_edge_gate_pass": true,
+      "texture": {
+        "interior_pixel_count": 24410,
+        "gray_mean": 230.91425645227366,
+        "gray_std": 3.8018707460658665,
+        "dark_pixel_ratio": 4.096681687832855e-05,
+        "saturated_pixel_ratio": 0.0,
+        "strong_gradient_ratio": 0.0009012699713232282,
+        "pattern_evidence_present": false
+      }
+    },
+    {
+      "piece_id": 3,
+      "source_center_a4_mm": [
+        66.99701729249456,
+        67.00528732214141
+      ],
+      "source_polygon_mm": [
+        [
+          32.75,
+          74.25
+        ],
+        [
+          36.25,
+          80.0
+        ],
+        [
+          110.25,
+          69.25
+        ],
+        [
+          64.25,
+          51.0
+        ]
+      ],
+      "center_inside": true,
+      "center_boundary_clearance_mm": 8.439499024027468,
+      "edge_lengths_mm": [
+        6.73145600891813,
+        74.77675106609006,
+        49.488003596831426,
+        39.15114940841456
+      ],
+      "minimum_edge_mm": 6.73145600891813,
+      "official_edge_gate_pass": false,
+      "implementation_edge_gate_pass": true,
+      "texture": {
+        "interior_pixel_count": 10900,
+        "gray_mean": 225.2408256880734,
+        "gray_std": 3.418256873347022,
+        "dark_pixel_ratio": 0.0,
+        "saturated_pixel_ratio": 0.0,
+        "strong_gradient_ratio": 0.0045871559633027525,
+        "pattern_evidence_present": false
+      }
+    },
+    {
+      "piece_id": 4,
+      "source_center_a4_mm": [
+        49.87714359951498,
+        31.04390649960544
+      ],
+      "source_polygon_mm": [
+        [
+          72.0,
+          24.75
+        ],
+        [
+          51.25,
+          19.5
+        ],
+        [
+          33.25,
+          29.0
+        ],
+        [
+          42.25,
+          47.25
+        ]
+      ],
+      "center_inside": true,
+      "center_boundary_clearance_mm": 8.324879735486352,
+      "edge_lengths_mm": [
+        21.403854793003994,
+        20.35313243704762,
+        20.348525745124633,
+        37.30030160735969
+      ],
+      "minimum_edge_mm": 20.348525745124633,
+      "official_edge_gate_pass": true,
+      "implementation_edge_gate_pass": true,
+      "texture": {
+        "interior_pixel_count": 4694,
+        "gray_mean": 229.12313591819344,
+        "gray_std": 1.950540300710613,
+        "dark_pixel_ratio": 0.0,
+        "saturated_pixel_ratio": 0.0,
+        "strong_gradient_ratio": 0.0,
+        "pattern_evidence_present": false
+      }
+    }
+  ],
+  "jetson_solver": {
+    "jetson_identity": {
+      "architecture": "aarch64",
+      "hostname": "monthwu-jetson",
+      "user": "jetson",
+      "opencv_python": "4.5.4"
+    },
+    "official20_filtered": {
+      "input_piece_count": 3,
+      "texture_image_supplied": true,
+      "solved": false,
+      "status": "NO_VALID_RECTANGLE",
+      "target_width_mm": 0.0,
+      "target_height_mm": 0.0,
+      "score": 0.0,
+      "score_margin": 0.0,
+      "placements": []
+    },
+    "current5_all": {
+      "input_piece_count": 4,
+      "texture_image_supplied": true,
+      "solved": false,
+      "status": "TIMEOUT_35S",
+      "timeout_sec": 35.0,
+      "configured_plan_timeout_sec": 30.0,
+      "placements": []
+    },
+    "cleanup": {
+      "nodes_after": [],
+      "solver_process_present": false,
+      "temporary_harness_removed": true,
+      "temporary_rectified_image_removed": true,
+      "source_or_config_deployed": false
+    }
+  },
+  "target_centers_available": false,
+  "rotation_commands_available": false,
+  "rectangle_reconstructed": false,
+  "control_output_allowed": false,
+  "decision": "FAIL_CALIBRATION_PATTERN_AND_GEOMETRY_GATES"
+}

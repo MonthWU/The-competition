@@ -1,0 +1,6 @@
+﻿a06043a5b2b40aa6339e657995eb36ddf6567b3c34c04492be9c0d4e77869956  src\puzzle_perception_node\include\puzzle_perception_node\puzzle_perception_node.hpp
+96f2485532290bbc9aa3bd54775c7f9bce8bdb4a11f58a4cf8fbf0f14fecf7d8  src\puzzle_perception_node\src\puzzle_perception_node.cpp
+3b8f9d029554abc8cc7b305f40711ffb5b4bfa408447ceb8ed77b97e98d7f739  src\vision_bringup\config\competition_tuning.yaml
+
+Change scope: task2 perception contour segmentation/approximation gates only; no coordinator or batch queue edits.
+Restore: copy files from this backup over matching paths under D:\CodexFolder\JetsonNano\Copyfiles\26E_vision, then redeploy/build on Jetson if needed.

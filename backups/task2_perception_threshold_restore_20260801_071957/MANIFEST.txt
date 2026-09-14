@@ -1,0 +1,6 @@
+﻿task=task2_perception_threshold_restore
+timestamp=20260801_071957
+change=restore task2 perception min_piece_edge_mm to current-version 7.0; keep solver legacy rollback and global placement queue unchanged
+file=src\vision_bringup\config\competition_tuning.yaml
+sha256_before=61a8421ab47cf24298c75da64872875c92655a8de8db31aa0bf19bcd3613458c
+restore=copy this backed up file over the project file, then redeploy/restart on Jetson if needed

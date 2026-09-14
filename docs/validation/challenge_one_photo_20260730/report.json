@@ -1,0 +1,206 @@
+{
+  "input": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\test_data\\basic_photo\\source.jpg",
+  "task": "challenge_one_unknown_geometry",
+  "basic_template_used": false,
+  "green_baseline_found": false,
+  "green_photo_tuned_hsv": [
+    35,
+    80,
+    70,
+    75,
+    255,
+    255
+  ],
+  "current_piece_count": 4,
+  "minimum_edge_required_mm": 20.0,
+  "strict_edge_gate_pass": false,
+  "invalid_piece_ids": [
+    3
+  ],
+  "strict_valid_piece_count": 3,
+  "current_centers_valid": true,
+  "pieces": [
+    {
+      "piece_id": 1,
+      "source_center_a4_mm": [
+        155.37397318828909,
+        35.60791899493254
+      ],
+      "source_polygon_mm": [
+        [
+          104.5,
+          12.0
+        ],
+        [
+          180.0,
+          79.0
+        ],
+        [
+          181.75,
+          15.75
+        ]
+      ],
+      "edge_lengths_mm": [
+        100.9418149232517,
+        63.27420485474314,
+        77.34096585898058
+      ],
+      "minimum_edge_mm": 63.27420485474314,
+      "edge_gate_pass": true,
+      "current_center_inside": true,
+      "current_center_boundary_clearance_mm": 16.109862020176088
+    },
+    {
+      "piece_id": 2,
+      "source_center_a4_mm": [
+        88.80987208251989,
+        100.24384694581232
+      ],
+      "source_polygon_mm": [
+        [
+          146.5,
+          84.0
+        ],
+        [
+          116.0,
+          78.25
+        ],
+        [
+          44.75,
+          101.25
+        ],
+        [
+          58.75,
+          128.75
+        ]
+      ],
+      "edge_lengths_mm": [
+        31.037275975832674,
+        74.87030452722895,
+        30.858548248418945,
+        98.50190353490638
+      ],
+      "minimum_edge_mm": 30.858548248418945,
+      "edge_gate_pass": true,
+      "current_center_inside": true,
+      "current_center_boundary_clearance_mm": 11.738201301480336
+    },
+    {
+      "piece_id": 3,
+      "source_center_a4_mm": [
+        66.99701729249456,
+        67.00528732214141
+      ],
+      "source_polygon_mm": [
+        [
+          32.75,
+          74.25
+        ],
+        [
+          36.25,
+          80.0
+        ],
+        [
+          110.25,
+          69.25
+        ],
+        [
+          64.25,
+          51.0
+        ]
+      ],
+      "edge_lengths_mm": [
+        6.73145600891813,
+        74.77675106609006,
+        49.488003596831426,
+        39.15114940841456
+      ],
+      "minimum_edge_mm": 6.73145600891813,
+      "edge_gate_pass": false,
+      "current_center_inside": true,
+      "current_center_boundary_clearance_mm": 8.439499024027468
+    },
+    {
+      "piece_id": 4,
+      "source_center_a4_mm": [
+        49.87714359951498,
+        31.04390649960544
+      ],
+      "source_polygon_mm": [
+        [
+          72.0,
+          24.75
+        ],
+        [
+          51.25,
+          19.5
+        ],
+        [
+          33.25,
+          29.0
+        ],
+        [
+          42.25,
+          47.25
+        ]
+      ],
+      "edge_lengths_mm": [
+        21.403854793003994,
+        20.35313243704762,
+        20.348525745124633,
+        37.30030160735969
+      ],
+      "minimum_edge_mm": 20.348525745124633,
+      "edge_gate_pass": true,
+      "current_center_inside": true,
+      "current_center_boundary_clearance_mm": 8.324879735486352
+    }
+  ],
+  "jetson_solver": {
+    "jetson_identity": {
+      "architecture": "aarch64",
+      "hostname": "monthwu-jetson",
+      "user": "jetson"
+    },
+    "source": "photo polygons extracted from test_data/basic_photo/source.jpg",
+    "strict_filtered": {
+      "input_piece_count": 3,
+      "received": true,
+      "solved": false,
+      "status": "NO_VALID_RECTANGLE",
+      "target_width_mm": 0.0,
+      "target_height_mm": 0.0,
+      "score": 0.0,
+      "score_margin": 0.0,
+      "placements": []
+    },
+    "bypass_all": {
+      "input_piece_count": 4,
+      "received": true,
+      "solved": false,
+      "status": "NO_VALID_RECTANGLE",
+      "target_width_mm": 0.0,
+      "target_height_mm": 0.0,
+      "score": 0.0,
+      "score_margin": 0.0,
+      "placements": []
+    },
+    "cleanup": {
+      "strict_nodes_after": [],
+      "bypass_nodes_after": [],
+      "temporary_harness_removed": true,
+      "source_or_config_deployed": false
+    }
+  },
+  "target_centers_available": false,
+  "rotation_commands_available": false,
+  "rectangle_reconstructed": false,
+  "decision": "FAIL_INPUT_CONSTRAINT_AND_NO_VALID_RECTANGLE",
+  "control_output_allowed": false,
+  "next_tuning": [
+    "Use a true challenge-one sample whose every physical edge is at least 20 mm.",
+    "Re-sample the green A4 HSV/Lab values on the final Jetson camera mode.",
+    "Refine A4 corners and polygon vertices before re-running the generic solver.",
+    "Do not lower the official 20 mm gate merely to make this basic-task photo pass."
+  ]
+}

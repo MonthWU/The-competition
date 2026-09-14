@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>vision_bringup</name>
+  <version>0.1.0</version>
+  <description>ROS2 launch and configuration package for the Jetson vision system.</description>
+  <maintainer email="monthwu@example.com">MonthWU</maintainer>
+  <license>Proprietary</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>puzzle_perception_node</exec_depend>
+  <exec_depend>puzzle_solver_node</exec_depend>
+  <exec_depend>puzzle_coordinator_node</exec_depend>
+  <exec_depend>serial_bridge_node</exec_depend>
+  <exec_depend>hmi_control_node</exec_depend>
+  <exec_depend>web_tuner_node</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,20 @@
+# Python 生成物
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ROS2 构建与运行产物
+build/
+install/
+log/
+
+# 编辑器与操作系统
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+desktop.ini
+
+# 临时目录
+tmp/

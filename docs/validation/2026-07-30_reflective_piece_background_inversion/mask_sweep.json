@@ -1,0 +1,216 @@
+{
+  "shape": [
+    891,
+    630
+  ],
+  "background_lab": [
+    167.0,
+    90.0,
+    153.0
+  ],
+  "results": [
+    {
+      "name": "Lab3D_12",
+      "components": 3,
+      "areas_mm2": [
+        1201.4,
+        2067.6,
+        11279.7
+      ],
+      "lower_fp_ratio": 0.50454,
+      "upper_fg_ratio": 0.776083
+    },
+    {
+      "name": "Lab3D_16",
+      "components": 2,
+      "areas_mm2": [
+        290.2,
+        8517.8
+      ],
+      "lower_fp_ratio": 0.309524,
+      "upper_fg_ratio": 0.660919
+    },
+    {
+      "name": "Lab3D_20",
+      "components": 4,
+      "areas_mm2": [
+        1215.9,
+        3381.8,
+        3659.6,
+        7548.2
+      ],
+      "lower_fp_ratio": 0.120012,
+      "upper_fg_ratio": 0.432787
+    },
+    {
+      "name": "Lab3D_24",
+      "components": 6,
+      "areas_mm2": [
+        304.8,
+        405.2,
+        534.2,
+        1202.6,
+        2068.8,
+        2545.2
+      ],
+      "lower_fp_ratio": 0.001889,
+      "upper_fg_ratio": 0.249393
+    },
+    {
+      "name": "Lab3D_28",
+      "components": 4,
+      "areas_mm2": [
+        527.7,
+        1192.9,
+        2053.7,
+        2487.2
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.217544
+    },
+    {
+      "name": "Lab3D_32",
+      "components": 4,
+      "areas_mm2": [
+        523.4,
+        1184.5,
+        2042.9,
+        2472.1
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.216209
+    },
+    {
+      "name": "Lab3D_36",
+      "components": 4,
+      "areas_mm2": [
+        520.9,
+        1175.3,
+        2026.2,
+        2459.4
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.214792
+    },
+    {
+      "name": "Lab3D_40",
+      "components": 4,
+      "areas_mm2": [
+        517.3,
+        1160.2,
+        1993.7,
+        2442.1
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.212426
+    },
+    {
+      "name": "Lab3D_48",
+      "components": 4,
+      "areas_mm2": [
+        509.0,
+        1061.6,
+        1898.2,
+        2332.8
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.202425
+    },
+    {
+      "name": "LabAB_8",
+      "components": 4,
+      "areas_mm2": [
+        566.3,
+        1288.9,
+        2176.4,
+        2734.2
+      ],
+      "lower_fp_ratio": 0.001882,
+      "upper_fg_ratio": 0.235939
+    },
+    {
+      "name": "LabAB_12",
+      "components": 4,
+      "areas_mm2": [
+        542.3,
+        1247.9,
+        2117.5,
+        2628.2
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.226938
+    },
+    {
+      "name": "LabAB_16",
+      "components": 4,
+      "areas_mm2": [
+        510.0,
+        1205.5,
+        2050.2,
+        2565.6
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.219917
+    },
+    {
+      "name": "LabAB_20",
+      "components": 4,
+      "areas_mm2": [
+        485.2,
+        1170.3,
+        1994.9,
+        2525.7
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.214583
+    },
+    {
+      "name": "LabAB_24",
+      "components": 4,
+      "areas_mm2": [
+        462.2,
+        1138.6,
+        1941.7,
+        2497.8
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.209928
+    },
+    {
+      "name": "LabAB_28",
+      "components": 4,
+      "areas_mm2": [
+        434.8,
+        1105.2,
+        1887.3,
+        2464.8
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.204813
+    },
+    {
+      "name": "LabAB_32",
+      "components": 4,
+      "areas_mm2": [
+        395.0,
+        1063.4,
+        1820.1,
+        2434.3
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.198668
+    },
+    {
+      "name": "HSV_green_inverse",
+      "components": 4,
+      "areas_mm2": [
+        461.9,
+        1138.9,
+        1933.3,
+        2519.9
+      ],
+      "lower_fp_ratio": 0.0,
+      "upper_fg_ratio": 0.210439
+    }
+  ]
+}

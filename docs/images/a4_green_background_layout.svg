@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1200" viewBox="0 0 1000 1200">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#102719" flood-opacity="0.24"/></filter>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/></pattern>
+  </defs>
+  <rect width="1000" height="1200" fill="#eef3ef"/>
+  <text x="500" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#183b25">26E_vision green A4 work surface</text>
+  <g filter="url(#shadow)">
+    <rect x="160" y="75" width="680" height="962" rx="6" fill="#3fae64"/>
+    <rect x="160" y="75" width="680" height="962" rx="6" fill="url(#grid)"/>
+    <rect x="160" y="75" width="680" height="962" rx="6" fill="none" stroke="#245f39" stroke-width="5"/>
+  </g>
+  <text x="185" y="112" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#ffffff">UPPER: random puzzle pieces</text>
+  <line x1="160" y1="556" x2="840" y2="556" stroke="#f8f2d8" stroke-width="9"/>
+  <line x1="160" y1="556" x2="840" y2="556" stroke="#2c5137" stroke-width="2" stroke-dasharray="12 9"/>
+  <text x="500" y="546" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#173a22">A4 divider</text>
+  <g stroke="#25322a" stroke-width="4" stroke-linejoin="round">
+    <path d="M245 185 L390 155 L418 250 L350 315 L250 285 Z" fill="#fffdfa"/>
+    <path d="M455 150 L610 185 L590 285 L500 310 L430 245 Z" fill="#fffdfa"/>
+    <path d="M280 360 L390 330 L455 390 L420 490 L285 475 Z" fill="#fffdfa"/>
+    <path d="M520 345 L675 330 L725 420 L650 495 L520 465 Z" fill="#fffdfa"/>
+  </g>
+  <g fill="#c93636">
+    <circle cx="320" cy="225" r="13"/><rect x="305" y="245" width="30" height="18" rx="5"/>
+    <polygon points="515,195 535,225 515,255 495,225"/>
+    <circle cx="345" cy="405" r="12"/><circle cx="382" cy="430" r="12"/>
+  </g>
+  <g fill="#202722">
+    <rect x="535" y="240" width="30" height="30" rx="4"/><polygon points="610,385 632,422 588,422"/><rect x="598" y="422" width="24" height="28" rx="4"/>
+  </g>
+  <g>
+    <circle cx="755" cy="170" r="34" fill="#2584d8" stroke="#e7f3ff" stroke-width="5"/><circle cx="755" cy="170" r="13" fill="#a8dafc"/>
+    <text x="710" y="225" font-family="Arial, sans-serif" font-size="16" fill="#ffffff">blue magnet marker</text>
+  </g>
+  <text x="185" y="605" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#ffffff">LOWER: target rectangle and recheck</text>
+  <rect x="295" y="680" width="410" height="250" rx="3" fill="#ffffff" fill-opacity="0.13" stroke="#ffffff" stroke-width="5" stroke-dasharray="16 10"/>
+  <g fill="#fffdfa" stroke="#25322a" stroke-width="3" stroke-linejoin="round">
+    <path d="M300 685 H500 V805 H420 L380 755 H300 Z"/><path d="M500 685 H700 V805 H620 L580 755 H500 Z"/>
+    <path d="M300 805 H420 L460 855 V925 H300 Z"/><path d="M420 805 H700 V925 H460 V855 Z"/>
+  </g>
+  <g stroke="#3fae64" stroke-width="3" stroke-dasharray="7 5"><line x1="500" y1="685" x2="500" y2="805"/><line x1="300" y1="805" x2="700" y2="805"/></g>
+  <text x="500" y="968" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#ffffff">closed contour - no overlap - no holes - valid size</text>
+  <g transform="translate(115 1072)">
+    <rect x="0" y="0" width="770" height="90" rx="14" fill="#ffffff" stroke="#cbd7ce" stroke-width="2"/>
+    <rect x="26" y="22" width="48" height="48" rx="8" fill="#3fae64"/>
+    <text x="88" y="42" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#183b25">recommended: matte medium green</text>
+    <text x="88" y="66" font-family="Arial, sans-serif" font-size="14" fill="#47614f">reference #3FAE64; tune thresholds from camera samples</text>
+    <rect x="565" y="22" width="48" height="48" rx="8" fill="#2584d8"/>
+    <text x="625" y="51" font-family="Arial, sans-serif" font-size="14" fill="#274054">separate from blue actuator</text>
+  </g>
+</svg>

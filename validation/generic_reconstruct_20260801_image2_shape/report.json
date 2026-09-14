@@ -1,0 +1,176 @@
+{
+  "input": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\test_data\\challenge_two_examples\\20260801_image2.jpg",
+  "decision": "PASS_SHAPE_COMPACT_CANDIDATE",
+  "jetson_used": false,
+  "algorithm": {
+    "name": "shape_compact_card_reconstruct",
+    "hardcoded_face": false,
+    "candidate_type": "source-orientation compacted fragment layout",
+    "exact_edge_chain_solver": false
+  },
+  "a4_quad_px": [
+    [
+      156.0,
+      223.0
+    ],
+    [
+      969.0,
+      214.0
+    ],
+    [
+      941.0,
+      1433.0
+    ],
+    [
+      54.0,
+      1367.0
+    ]
+  ],
+  "piece_count": 4,
+  "fragments": [
+    {
+      "piece_id": 1,
+      "area_px": 15463.5,
+      "bbox_px": [
+        187,
+        853,
+        184,
+        175
+      ],
+      "center_px": [
+        279.0,
+        940.5
+      ]
+    },
+    {
+      "piece_id": 2,
+      "area_px": 42127.5,
+      "bbox_px": [
+        402,
+        877,
+        293,
+        252
+      ],
+      "center_px": [
+        548.5,
+        1003.0
+      ]
+    },
+    {
+      "piece_id": 3,
+      "area_px": 26389.5,
+      "bbox_px": [
+        431,
+        703,
+        250,
+        193
+      ],
+      "center_px": [
+        556.0,
+        799.5
+      ]
+    },
+    {
+      "piece_id": 4,
+      "area_px": 11299.0,
+      "bbox_px": [
+        725,
+        919,
+        103,
+        257
+      ],
+      "center_px": [
+        776.5,
+        1047.5
+      ]
+    }
+  ],
+  "placements": [
+    {
+      "piece_id": 1,
+      "source_bbox_px": [
+        187,
+        853,
+        184,
+        175
+      ],
+      "target_bbox_px": [
+        10,
+        160,
+        184,
+        175
+      ],
+      "delta_px": [
+        -177,
+        -693
+      ]
+    },
+    {
+      "piece_id": 2,
+      "source_bbox_px": [
+        402,
+        877,
+        293,
+        252
+      ],
+      "target_bbox_px": [
+        196,
+        184,
+        293,
+        252
+      ],
+      "delta_px": [
+        -206,
+        -693
+      ]
+    },
+    {
+      "piece_id": 3,
+      "source_bbox_px": [
+        431,
+        703,
+        250,
+        193
+      ],
+      "target_bbox_px": [
+        225,
+        10,
+        250,
+        193
+      ],
+      "delta_px": [
+        -206,
+        -693
+      ]
+    },
+    {
+      "piece_id": 4,
+      "source_bbox_px": [
+        725,
+        919,
+        103,
+        257
+      ],
+      "target_bbox_px": [
+        491,
+        226,
+        103,
+        257
+      ],
+      "delta_px": [
+        -234,
+        -693
+      ]
+    }
+  ],
+  "outputs": {
+    "rectified_a4": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\generic_reconstruct_20260801_image2_shape\\rectified_a4.jpg",
+    "fragment_overlay": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\generic_reconstruct_20260801_image2_shape\\fragment_overlay.jpg",
+    "reconstruction": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\generic_reconstruct_20260801_image2_shape\\shape_compact_reconstruction.jpg",
+    "report_json": "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\validation\\generic_reconstruct_20260801_image2_shape\\report.json"
+  },
+  "boundary": [
+    "Windows offline visual candidate only.",
+    "This mode detects 3-piece/non-2x2 samples and compacts the observed layout; it does not yet prove a unique edge-chain reconstruction."
+  ]
+}

@@ -1,0 +1,2 @@
+[ WARN:0@0.139] global cap_gstreamer.cpp:1728 open OpenCV | GStreamer warning: Cannot query video position: status=1, value=68, duration=-1
+[INFO] [1785392654.468293953] [rclcpp]: signal_handler(SIGINT/SIGTERM)

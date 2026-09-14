@@ -1,0 +1,242 @@
+# Competition-site tuning overlay. Topics, device paths, coordinate-frame names,
+# and protocol formats remain in vision_system.yaml.
+
+puzzle_perception_node:
+  ros__parameters:
+    require_green_a4: true
+    # Green paper/frame HSV mask measured by the user (OpenCV H range is 0..179).
+    green_a4_h_min: 40
+    green_a4_h_max: 75
+    green_a4_s_min: 85
+    green_a4_s_max: 255
+    green_a4_v_min: 65
+    green_a4_v_max: 255
+    green_a4_morph_kernel: 7
+    green_a4_morph_iterations: 2
+    green_a4_min_border_coverage: 0.35
+    a4_polygon_epsilon_ratio: 0.02
+    # Refine approxPolyDP's integer A4 corners with robust full-contour edge fits.
+    green_a4_line_fit_band_px: 6.0
+    green_a4_line_fit_min_points: 12
+    green_a4_max_corner_refine_px: 25.0
+    a4_min_area_ratio: 0.08
+    a4_max_area_ratio: 0.98
+    # Only reject implausibly slender candidates; do not require the 210:297 A4 ratio.
+    green_frame_min_short_long_ratio: 0.30
+    # White puzzle-piece HSV mask. This is retained as a fallback when plain
+    # piece background inversion is disabled.
+    white_piece_h_min: 0
+    white_piece_h_max: 179
+    white_piece_s_min: 0
+    white_piece_s_max: 69
+    white_piece_v_min: 160
+    white_piece_v_max: 255
+    # Basic and challenge-one plain pieces: segment the current green A4 paper
+    # background and invert it. Chroma-only Lab distance tolerates bright/dark
+    # plain pieces without making task 2 depend on a white-only threshold.
+    plain_piece_use_a4_background_inversion: true
+    plain_piece_background_distance_threshold: 12.0
+    plain_piece_background_max_mad: 8.0
+    plain_piece_background_sample_stride: 4
+    plain_piece_background_chroma_only: true
+    # Challenge pieces are detected from the rectified A4 image with Canny
+    # because the active recognition scene is constrained to contain only pieces
+    # inside the A4 area. Flood-filling background through gaps keeps nearby
+    # pieces separate. Lab fill recovers large or weak-edge piece interiors;
+    # downstream contour geometry gates still decide validity.
+    challenge_piece_use_canny: true
+    challenge_piece_use_lab_fill: true
+    canny_low_threshold: 40.0
+    canny_high_threshold: 120.0
+    canny_blur_kernel: 3
+    canny_aperture_size: 3
+    canny_l2_gradient: false
+    canny_edge_dilate_iterations: 0
+    canny_close_kernel: 3
+    canny_close_iterations: 0
+    canny_flood_fill_background: true
+    page_margin_mm: 3.0
+    # The green A4 long side is split into upper source and lower target regions.
+    region_split_ratio: 0.5
+    divider_exclusion_mm: 4.0
+    morph_kernel: 3
+    morph_iterations: 1
+    min_piece_area_mm2: 100.0
+    max_piece_area_mm2: 12000.0
+    # The fixed basic template contains one nominal 10 mm edge; keep its gate
+    # separate from the independently tuned challenge-one gate below.
+    basic_min_piece_edge_mm: 7.0
+    # Reflective metal produces small threshold chamfers. This limit only finds
+    # the initial 3/4/4/4 topology; final fitted-line residual gates stay strict.
+    basic_contour_epsilon_max_mm: 3.0
+    # Challenge task one uses the archive solver contract: every detected
+    # supplied-piece edge must satisfy the 20 mm site-piece gate.
+    min_piece_edge_mm: 20.0
+    # Challenge pieces must preserve their measured physical contour. A coarse
+    # candidate that creates too many vertices or short edges is rejected rather
+    # than simplified by deleting obtuse vertices.
+    polygon_epsilon_mm: 4.25
+    max_polygon_vertices: 5
+    max_piece_count: 4
+    # Current challenge-one puzzle contains four physical pieces. Reject a
+    # partial three-piece contour set instead of returning a false rectangle.
+    challenge_one_expected_piece_count: 4
+    # Fixed-template area gate used while selecting the task-1 3/4/4/4 fitted contours.
+    basic_template_piece_area_relative_tolerance: 0.18
+    remove_magnet_color: true
+    magnet_h_min: 100
+    magnet_h_max: 140
+    magnet_s_min: 100
+    magnet_s_max: 255
+    magnet_v_min: 60
+    magnet_v_max: 255
+    # Retained as a disabled fallback when challenge_piece_use_canny is false.
+    challenge_two_background_distance_threshold: 24.0
+    challenge_two_background_max_mad: 10.0
+    challenge_two_background_sample_stride: 4
+    challenge_two_min_piece_edge_mm: 5.0
+    challenge_two_rectangle_detection_enabled: true
+    challenge_two_rectangle_min_area_mm2: 1000.0
+    challenge_two_rectangle_max_area_mm2: 6000.0
+    challenge_two_rectangle_min_rectangularity: 0.55
+    challenge_two_rectangle_max_aspect_ratio: 3.2
+    contour_epsilon_min_mm: 0.6
+    contour_epsilon_max_mm: 2.0
+    contour_epsilon_steps: 5
+    contour_min_points_per_edge: 8
+    contour_max_line_rms_mm: 1.2
+    contour_max_line_residual_mm: 3.0
+
+puzzle_solver_node:
+  ros__parameters:
+    # Basic task: four known templates forming the supplied 100 mm x 60 mm layout.
+    basic_task_template_enabled: true
+    basic_template_max_vertex_rms_mm: 3.0
+    basic_template_max_vertex_error_mm: 5.0
+    basic_template_piece_area_relative_tolerance: 0.18
+    basic_template_area_weight: 10.0
+    # After moving measured contours to the target pose, reject visible holes,
+    # protrusions, or overlap against the fixed 100 x 60 mm template layout.
+    basic_template_max_layout_hole_mm2: 100.0
+    basic_template_max_layout_outside_mm2: 100.0
+    basic_template_max_layout_overlap_mm2: 30.0
+    # Current measured contours need 10% seam-length tolerance for imaging and
+    # fitting error; endpoint, overlap, dimensions, and rectangularity remain strict.
+    edge_length_relative_tolerance: 0.10
+    minimum_partial_edge_ratio: 0.25
+    endpoint_tolerance_mm: 4.0
+    # Core overlap is a hard physical-conflict gate. Nominal overlap is allowed
+    # only within measured contour uncertainty and remains part of the score.
+    overlap_tolerance_mm2: 10.0
+    nominal_overlap_tolerance_mm2: 0.0
+    contour_uncertainty_base_mm: 1.5
+    contour_uncertainty_low_confidence_mm: 2.0
+    raster_resolution_mm: 0.75
+    target_long_min_mm: 96.0
+    target_long_max_mm: 104.0
+    target_short_min_mm: 56.0
+    target_short_max_mm: 64.0
+    minimum_rectangularity: 0.95
+    minimum_aspect_ratio: 1.05
+    target_center_x_a4_mm: 105.0
+    # Centre of the lower half: (297 * 0.5 + 297) / 2 = 222.75 mm.
+    target_center_y_a4_mm: 222.75
+    # Desired normal separation between adjacent target polygons. It is applied
+    # after solving and does not relax overlap or contour quality gates.
+    target_piece_gap_mm: 0.2
+    length_weight: 20.0
+    partial_edge_weight: 3.0
+    endpoint_weight: 2.0
+    overlap_weight: 10.0
+    rectangularity_weight: 300.0
+    pattern_enabled: false
+    texture_weight: 20.0
+    texture_band_mm: 3.0
+    texture_samples_along_edge: 24
+    texture_samples_across_edge: 3
+    pattern_edge_priority_enabled: true
+    pattern_edge_min_strength: 0.12
+    pattern_edge_priority_weight: 2.0
+    texture_color_cost_weight: 1.0
+    texture_gray_zncc_weight: 1.0
+    texture_gradient_zncc_weight: 1.0
+    texture_ssim_weight: 1.0
+    max_states_per_subset: 300
+    placed_position_tolerance_mm: 5.0
+    placed_angle_tolerance_deg: 5.0
+    minimum_score_margin: 2.0
+    # Congruent pieces may have equivalent valid placements. Task 2 accepts any
+    # hard-constraint-valid rectangle and resolves ties by movement cost.
+    challenge_minimum_score_margin: 0.0
+    # Both challenge tasks: direction is free, but the complete target polygon
+    # must remain inside the lower half of the portrait A4 page.
+    challenge_target_long_min_mm: 90.0
+    challenge_target_long_max_mm: 120.0
+    challenge_target_short_min_mm: 50.0
+    challenge_target_short_max_mm: 90.0
+    # Task 2 intentionally keeps the archive geometric search order while the
+    # coordinator still uses the current global batch placement queue.
+    challenge_one_legacy_algorithm_enabled: true
+    challenge_minimum_rectangularity: 0.95
+    challenge_minimum_aspect_ratio: 1.0
+    challenge_placement_frame_origin_x_mm: 0.0
+    challenge_placement_frame_origin_y_mm: 148.5
+    challenge_placement_frame_width_mm: 210.0
+    challenge_placement_frame_height_mm: 148.5
+    challenge_placement_frame_margin_mm: 3.0
+    challenge_minimum_piece_edge_mm: 20.0
+    challenge_require_each_piece_boundary_edge: true
+    # Real A4 homography and contour fitting error can move an otherwise valid
+    # complete outer edge by more than 2 mm.
+    challenge_boundary_edge_tolerance_mm: 5.0
+    challenge_anchor_move_distance_weight: 0.02
+    challenge_anchor_rotation_weight: 0.02
+    challenge_anchor_fallback_penalty: 100.0
+    # Task 3 starts from task 2's rectangle geometry and closed-loop lifecycle.
+    # White borders are outer-frame evidence only; many, weak, or black-looking
+    # border samples remain geometric candidates instead of hard rejections.
+    # Pattern evidence ranks solved ambiguous alternatives; it does not require
+    # strict suit alignment or reject an otherwise valid unique geometric layout.
+    challenge_two_target_long_min_mm: 90.0
+    challenge_two_target_long_max_mm: 120.0
+    challenge_two_target_short_min_mm: 50.0
+    challenge_two_target_short_max_mm: 90.0
+    challenge_two_minimum_rectangularity: 0.85
+    challenge_two_minimum_aspect_ratio: 1.0
+    challenge_two_minimum_boundary_edge_mm: 5.0
+    challenge_two_require_each_piece_boundary_edge: true
+    challenge_two_pattern_enabled: true
+    # If a near-boundary suit/mark is present on both candidate seam edges, compare
+    # those pieces first and slightly prefer the best texture match.
+    challenge_two_pattern_edge_priority_enabled: true
+    challenge_two_pattern_edge_min_strength: 0.12
+    challenge_two_pattern_edge_priority_weight: 2.0
+    # <= 0 disables the absolute score ceiling so texture is a ranking aid.
+    challenge_two_maximum_solution_score: 0.0
+    # Keep zero by default: the best texture-ranked geometry is accepted without
+    # a hard score gap requirement.
+    challenge_two_minimum_score_margin: 0.0
+    challenge_two_max_states_per_subset: 300
+
+puzzle_coordinator_node:
+  ros__parameters:
+    green_a4_retry_sec: 0.5
+    plan_timeout_sec: 5.0
+    # Real challenge-one contours can take more than 30 s on the Jetson solver.
+    # Keep the coordinator waiting for the authoritative solver result instead
+    # of timing out and discarding a still-running valid search.
+    challenge_plan_timeout_sec: 120.0
+    placement_timeout_sec: 30.0
+    max_scan_retries: 2
+    result_linger_sec: 8.0
+
+web_tuner_node:
+  ros__parameters:
+    preview_enabled: true
+    # Keep debug annotations legible without changing their vision-space font geometry.
+    # Bound the higher-resolution JPEG stream to 20 FPS to limit CPU and LAN load.
+    preview_fps: 20.0
+    preview_width: 1600
+    confidence_threshold: 0.0
+    iou_threshold: 0.0
+    status_log_interval_sec: 5.0

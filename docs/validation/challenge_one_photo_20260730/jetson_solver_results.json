@@ -1,0 +1,36 @@
+{
+  "jetson_identity": {
+    "architecture": "aarch64",
+    "hostname": "monthwu-jetson",
+    "user": "jetson"
+  },
+  "source": "photo polygons extracted from test_data/basic_photo/source.jpg",
+  "strict_filtered": {
+    "input_piece_count": 3,
+    "received": true,
+    "solved": false,
+    "status": "NO_VALID_RECTANGLE",
+    "target_width_mm": 0.0,
+    "target_height_mm": 0.0,
+    "score": 0.0,
+    "score_margin": 0.0,
+    "placements": []
+  },
+  "bypass_all": {
+    "input_piece_count": 4,
+    "received": true,
+    "solved": false,
+    "status": "NO_VALID_RECTANGLE",
+    "target_width_mm": 0.0,
+    "target_height_mm": 0.0,
+    "score": 0.0,
+    "score_margin": 0.0,
+    "placements": []
+  },
+  "cleanup": {
+    "strict_nodes_after": [],
+    "bypass_nodes_after": [],
+    "temporary_harness_removed": true,
+    "source_or_config_deployed": false
+  }
+}

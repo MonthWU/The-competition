@@ -1,0 +1,15 @@
+JETSON IDENTITY
+aarch64
+monthwu-jetson
+jetson
+
+STRICT_FILTERED
+{"case":"strict_filtered","input_piece_count":3,"received":true,"solved":false,"status":"NO_VALID_RECTANGLE","target_width_mm":0.0,"target_height_mm":0.0,"score":0.0,"score_margin":0.0,"placements":[]}
+NODES_AFTER=[]
+
+BYPASS_ALL
+{"case":"bypass_all","input_piece_count":4,"received":true,"solved":false,"status":"NO_VALID_RECTANGLE","target_width_mm":0.0,"target_height_mm":0.0,"score":0.0,"score_margin":0.0,"placements":[]}
+NODES_AFTER=[]
+
+The local harness was copied only to Jetson /tmp and removed after both runs.
+No project source, configuration, model, service, or serial device was changed.

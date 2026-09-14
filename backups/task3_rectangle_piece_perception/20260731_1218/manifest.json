@@ -1,0 +1,14 @@
+﻿[
+    {
+        "path":  "src\\puzzle_perception_node\\src\\puzzle_perception_node.cpp",
+        "sha256":  "84717EEB4459A749BDBE11C00621CA5BE94385455A7859BA97D2C271212B7123"
+    },
+    {
+        "path":  "src\\puzzle_perception_node\\include\\puzzle_perception_node\\puzzle_perception_node.hpp",
+        "sha256":  "75F865843737CA05D9D3092A6E4DC4E52A69886937D6CD8473B0DB01CDAC753A"
+    },
+    {
+        "path":  "src\\vision_bringup\\config\\competition_tuning.yaml",
+        "sha256":  "FF8D983E4DB196E16BC88C509B2C143A1981436C674C792A85CC56C7FE883202"
+    }
+]

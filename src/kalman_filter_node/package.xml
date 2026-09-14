@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>kalman_filter_node</name>
+  <version>0.1.0</version>
+  <description>Kalman filtering node for OpenCV target points before serial output.</description>
+  <maintainer email="monthwu@example.com">MonthWU</maintainer>
+  <license>Proprietary</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>vision_interfaces</depend>
+  <depend>opencv</depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

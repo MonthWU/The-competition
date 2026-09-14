@@ -1,0 +1,22 @@
+﻿[
+    {
+        "relative_path":  "src\\puzzle_solver_node\\include\\puzzle_solver_node\\puzzle_solver_core.hpp",
+        "sha256":  "D453546935A4D16A6C99D5ED390C40DD813FAEA0A3F7A87F4E5882D8A9484114",
+        "backup_path":  "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\backups\\task2_algorithm_rollback_20260801_064431\\src\\puzzle_solver_node\\include\\puzzle_solver_node\\puzzle_solver_core.hpp"
+    },
+    {
+        "relative_path":  "src\\puzzle_solver_node\\src\\puzzle_solver_core.cpp",
+        "sha256":  "01C0D73A8B7081EA0DF021138E85F92ECC3D3AD3755742FA149F7F81240FBC7A",
+        "backup_path":  "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\backups\\task2_algorithm_rollback_20260801_064431\\src\\puzzle_solver_node\\src\\puzzle_solver_core.cpp"
+    },
+    {
+        "relative_path":  "src\\puzzle_solver_node\\src\\puzzle_solver_node.cpp",
+        "sha256":  "DFE28597505BD74602103632C648756FD848860AAADE54727AE2B7C1E7DAA2FF",
+        "backup_path":  "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\backups\\task2_algorithm_rollback_20260801_064431\\src\\puzzle_solver_node\\src\\puzzle_solver_node.cpp"
+    },
+    {
+        "relative_path":  "src\\vision_bringup\\config\\competition_tuning.yaml",
+        "sha256":  "6AFD171A7BFB0383094550F4678839F8B393B77B55035CFF4B8CE2C019FE760E",
+        "backup_path":  "D:\\CodexFolder\\JetsonNano\\Copyfiles\\26E_vision\\backups\\task2_algorithm_rollback_20260801_064431\\src\\vision_bringup\\config\\competition_tuning.yaml"
+    }
+]

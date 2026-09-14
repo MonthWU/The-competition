@@ -1,0 +1,22 @@
+JETSON IDENTITY
+aarch64
+monthwu-jetson
+jetson
+OpenCV Python 4.5.4
+
+OFFICIAL20_FILTERED
+{"case":"official20_filtered","input_piece_count":3,"texture_image_supplied":true,"solved":false,"status":"NO_VALID_RECTANGLE","target_width_mm":0.0,"target_height_mm":0.0,"score":0.0,"score_margin":0.0,"placements":[]}
+
+CURRENT5_ALL
+{"case":"current5_all","received":false,"status":"TIMEOUT"}
+Harness deadline: 35 seconds
+Configured challenge plan timeout: 30 seconds
+
+CLEANUP
+ROS_NODES_AFTER=[]
+SOLVER_PROCESS_PRESENT=false
+TEMP_HARNESS_PRESENT=false
+TEMP_RECTIFIED_IMAGE_PRESENT=false
+
+Only the reviewed harness and rectified test image were copied to Jetson /tmp.
+No project source, configuration, model, service, camera, or serial device was changed.

@@ -27,6 +27,16 @@ from serial_protocol import (
     START_SLOTS,
 )
 from map_model import MapModel
+import subprocess
+import time
+
+import rclpy
+from prescan_dnn_node import PrescanDnnNode
+from obstacle_detector import ObstacleDetector
+from road_judge import RoadJudge
+
+PRESCAN_LAUNCH = "/root/dev_ws/appli/framework/launch/prescan.launch.py"
+SCAN_WAIT_SEC = 8.0  # 等一帧 ball 检测的最大等待时间
 
 
 class MissionDispatcher:
@@ -165,15 +175,69 @@ class MissionDispatcher:
     # ================= 视觉环节钩子（待障碍识别节点实现）=================
 
     def scan_angle(self, angle: float) -> bool:
-        """拍摄给定角度并识别障碍（占位钩子）。
+        """实接（2026-09-23）
 
-        TODO: obstacle_detector 实现后在此接入：按 start_id 对应的 0° 基线方向，
-        拍摄该角度帧 → 障碍识别 → 障碍像素→(区间表)→网格 ID→road_judge→MapModel。
-        骨架当前直接返回 False。
+        流程：
+          1. subprocess 拉起 framework/launch/prescan.launch.py（起 LRCP AR0234 + dnn_node_example）
+          2. 在主进程 rclpy.init + PrescanDnnNode 订阅 /hobot_dnn_detection
+          3. spin 等一帧 ball 检测（最长 SCAN_WAIT_SEC 秒）
+          4. obstacle_detector.pixel_to_grid → road_judge.judge_from_hits
+          5. MapModel.set_obstacles
+
+        注：单应性矩阵未标定 → pixel_to_grid 返回占位 (2,2)；
+        实测闭环需先现场标定 calibrate(image_points, map_points)。
         """
         print(f"[mission] scan_angle({angle}) start_id={self.start_id} "
-              f"尚未实现（待 obstacle_detector）")
-        return False
+              f"正在拉起 prescan.launch ...")
+        try:
+            self._launch_proc = subprocess.Popen(
+                ["ros2", "launch", PRESCAN_LAUNCH],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            time.sleep(3.0)  # 等相机 + codec + dnn 起来
+            if not rclpy.ok():
+                rclpy.init()
+                self._rclpy_init = True
+            sub_node = PrescanDnnNode(name="prescan_sub_" + str(int(angle)))
+            deadline = time.time() + SCAN_WAIT_SEC
+            detected = []
+            while time.time() < deadline:
+                rclpy.spin_once(sub_node, timeout_sec=0.5)
+                if sub_node.done_event.is_set():
+                    detected = sub_node.last_balls
+                    break
+            sub_node.destroy_node()
+            if self._rclpy_init:
+                rclpy.shutdown()
+                self._rclpy_init = False
+            if not detected:
+                print(f"[mission] scan_angle({angle})：未检测到 ball（可能无障碍或模型未命中）")
+                return True  # 无障碍按协议仍 ack
+            hits = {}
+            for (cx_px, cy_px, conf) in detected:
+                r, c = self.obstacle_detector.pixel_to_grid(cx_px, cy_px)
+                gid = _grid_id(r, c)
+                if gid is not None:
+                    hits[gid] = max(hits.get(gid, 0.0), conf)
+            obstacles = self.road_judge.judge_from_hits(hits)
+            if obstacles:
+                self.map_model.set_obstacles(list(obstacles))
+                print(f"[mission] scan_angle({angle})：命中候选 {sorted(obstacles)}")
+            else:
+                print(f"[mission] scan_angle({angle})：0 置信度命中")
+            return True
+        except Exception as e:
+            print(f"[mission] scan_angle({angle}) 异常: {e}")
+            return False
+        finally:
+            if self._launch_proc and self._launch_proc.poll() is None:
+                self._launch_proc.terminate()
+                try:
+                    self._launch_proc.wait(timeout=2.0)
+                except Exception:
+                    self._launch_proc.kill()
+                self._launch_proc = None
 
     # ================= 主流程 =================
 

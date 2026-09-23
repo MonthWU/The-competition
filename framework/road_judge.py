@@ -34,12 +34,42 @@ class RoadJudge:
     def judge(self, obstacles: list) -> set:
         """输入障碍网格坐标列表 [(r,c), ...]，返回命中的障碍候选点集合 {(r,c)}。
 
-        实现流程（TODO）：
+        实现流程：
           1. 对每个障碍坐标调 nearest_candidate()，dist <= hit_threshold 即命中
           2. 命中点并入结果集合（保守：误差圈内全部标记）
           3. 结果交给 MapModel.set_obstacles()
+        注：实际生产链路（2026-09-23 起）改由用户在标注器标注后喂入
+        `judge_from_hits(hits)` —— 本方法是参考/降级路径。
         """
-        raise NotImplementedError("TODO: 障碍 → 就近候选点判定（13 候选点见 map_model）")
+        hits: set = set()
+        for r, c in obstacles:
+            (cr, cc), d = nearest_candidate(r, c)
+            if d <= self.hit_threshold:
+                hits.add((cr, cc))
+        return hits
+
+    def judge_from_hits(self, hits_from_model: dict) -> set:
+        """接收模型/标注器给出的候选点命中表，返回最终障碍候选点集合。
+
+        参数：
+          hits_from_model: {grid_id (int 0~24): confidence (float)}
+            —— 由 prescan_dnn_node 或用户在 map-quad-annotator 标注器中给出
+            —— 注意：grid_id 必须在 OBSTACLE_CANDIDATES_13 对应的 13 个 id 中
+
+        过滤规则（2026-09-23 用户定义）：
+          1. 候选点有效性校验：grid_id 必须落在 OBSTACLE_CANDIDATES_13
+          2. 置信度 >= hit_threshold（默认 0.5）
+          3. 返回 {(r, c), ...} 供 MapModel.set_obstacles()
+        """
+        result: set = set()
+        for grid_id, conf in hits_from_model.items():
+            r, c = divmod(grid_id, 5)
+            if (r, c) not in OBSTACLE_CANDIDATES_13:
+                continue
+            if conf < self.hit_threshold:
+                continue
+            result.add((r, c))
+        return result
 
 
 def demo():
@@ -55,6 +85,18 @@ def demo():
     print("标记后地图：")
     print(m)
     print("障碍候选点已占用:", m.obstacle_cells())
+
+
+def demo_from_hits():
+    """演示：通过标注器/模型标注的命中表输入。"""
+    rj = RoadJudge(hit_threshold=0.5)
+    hits = {1: 0.9, 3: 0.7, 13: 0.2, 6: 0.8}  # 13 置信度太低应被滤掉
+    result = rj.judge_from_hits(hits)
+    print(f"标注命中 {hits} → 最终障碍候选点: {sorted(result)}")
+
+    m = MapModel()
+    m.set_obstacles(list(result))
+    print(m)
 
 
 if __name__ == "__main__":

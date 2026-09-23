@@ -12,6 +12,8 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 # 全局扫描相机 by-id（2026-09-23 固化）
 SCAN_VIDEO_DEVICE = "/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0"
@@ -47,31 +49,36 @@ def generate_launch_description():
             {"usb_image_height": LaunchConfiguration("scan_height")},
             {"usb_framerate": LaunchConfiguration("scan_fps")},
             {"usb_video_device": LaunchConfiguration("scan_video_device")},
-            {"usb_image_format": "mjpeg"},
-            {"io_method": "shared_mem"},
+            {"usb_pixel_format": "mjpeg"},
+            {"usb_io_method": "mmap"},
         ],
         output="screen",
     )
 
-    codec_decode_node = Node(
-        package="hobot_codec",
-        executable="hobot_codec_decode",
-        name="prescan_codec_decode",
-        parameters=[
-            {"codec_in_mode": "ros"},
-            {"codec_out_mode": "shared_mem"},
-            {"codec_sub_topic": "/image"},
-            {"codec_pub_topic": "/hbmem_img"},
-            {"codec_in_format": "jpeg"},
-        ],
-        output="screen",
+    # 解码 NV12 → shared_mem（jpeg 输入 → NV12 输出），与 v11 launch 一致
+    codec_decode_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("hobot_codec"),
+                "launch/hobot_codec_decode.launch.py",
+            )
+        ),
+        launch_arguments={
+            "codec_in_mode": "ros",
+            "codec_out_mode": "shared_mem",
+            "codec_sub_topic": "/image",
+            "codec_pub_topic": "/hbmem_img",
+        }.items(),
     )
 
-    shm_node = Node(
-        package="hobot_shm",
-        executable="hobot_shm",
-        name="prescan_shm",
-        output="screen",
+    # hobot_shm 是环境配置包（设 FASTRTPS QoS 让共享内存零拷贝），不是 Node
+    shm_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("hobot_shm"),
+                "launch/hobot_shm.launch.py",
+            )
+        )
     )
 
     dnn_node = Node(

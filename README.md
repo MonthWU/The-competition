@@ -52,7 +52,8 @@ appli/
 ├── obj_detect/                  # 目标检测包（obj_camd / obj_serial / obj_video_dumper）
 ├── qrc_skandier/                # 二维码包（qrc_cam / qrc_scanner / qrc_cam_killer / flaskr）
 ├── qrc_hobot_usb_cam/           # USB 相机 ROS2 包装（C++）
-├── dnn/                         # 模型资产：task_obj.json + YOLOv5s .bin（250720_v5s_672）
+├── dnn/                         # 模型资产：原任务 yolov5s_v5s_672 + yolov11 9 类物块/标识（task_obj_v11.json）
+├── framework/dnn/               # 【新增】全局扫描 1 类 ball yolo + task_obj_obstacle.json
 ├── service/                     # appli.service + appli.sh（自启链路）
 ├── gpio_shutdown/               # GPIO 关机键服务
 ├── other/                       # 辅助 launch/脚本
@@ -75,12 +76,25 @@ CLASS 映射：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 �
 目标，且满足区域过滤（x∈[140,500]、y<420，圆环不受限）；无二维码时每 50 帧发心跳
 `0000000`。调试可 `ros2 topic echo /serial_send`。
 
-## 5. 相机分配
+## 5. 相机分配（2026-09-23 三路相机固化，by-id 路径）
 
-- 单 USB 相机分时复用（同一总线带宽不足，见 launch 注释）：先扫码、扫码完成释放后再起检测相机
-- 相机按 v4l2 帧率分配：帧率高的给二维码（黑白相机），检测用 960×544@120
-- 注意：`find_camera()` 探测 `video0/video2`，当前板子只有 `video0/video1`（单相机），
-  `video2` 不存在会导致 launch 启动失败（TypeError: float vs None）——复测前先核对相机实况
+板端实接 3 个 USB 相机，**全部挂 USB Bus01（480M）同一 Hub 下**——3 路不并发常开、每阶段用完
+立即 `kill` 释放带宽（实测带宽争抢会丢帧）。任务映射（by-id 路径固定，不受 `/dev/video*`
+编号漂移影响）：
+
+| 任务 | 相机（USB Port）| 出图 by-id 节点 | max fps | 备注 |
+|---|---|---|---|---|
+| 扫码 qrc_skandier | **KS1A293**（Port 2）| `/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0` | 240 | 唯一支持 240fps@640×400，兼容黑白二维码高速抓拍 |
+| 检测 obj_detect | **DCXIN Camera**（Port 4）| `/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0` | 90 | yolov11 9 类（圆台物块 + 放置区标识）|
+| 全局扫描 framework/map_scanner | **LRCP AR0234**（Port 3）| `/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0` | 90 | 1920×1200 MJPG，开局斜视看 2400×2400 全场 |
+
+v11 链路 `obj_detect_v11.launch.py` 的 `cap_qrc_devnode` / `cap_objdet_devnode` 默认按上表
+写死；`framework/map_scanner.py` 默认设备同上。原 `obj_detect.launch.py` 的 `find_camera()`
+启发式仅在两相机场景下兼容，**未做 by-id 化**（按边界规则保留原文件）。
+
+**当前观测点（v11 链路必读）**：检测相机默认 960×544，但 YOLOv11 9 类模型内部要求 640×640
+NV12 输入；当下用 `cap_objdet=/dev/video0`（KS1A293）做单相机冒烟时已规避分段错误，全链路
+端到端验收待回。
 
 ## 6. 避障增量（2027 新增，framework/）
 
@@ -120,7 +134,7 @@ is_start_frame）+ `framework/mission_dispatcher.py`
 视觉环节保留 `scan_angle` 钩子）。无下位机联调：
 `cd framework && python3 /tmp/test_comm.py`（os.openpty 虚拟串口对，`[4]`→ack→3×shot→3×ack→`[2 1 3 00]` 闭环）。
 
-### 6.2 framework/ 新增节点状态（2026-09-05）
+### 6.2 framework/ 新增节点状态（2026-09-23 更新）
 
 | 文件 | 状态 | 说明 |
 |---|---|---|
@@ -128,15 +142,27 @@ is_start_frame）+ `framework/mission_dispatcher.py`
 | `road_judge.py` | ⚠️ 部分 | `nearest_candidate` 已实现；`judge()` 误差圈判定待实现 |
 | `serial_protocol.py` | ✅ 完成 | 文本协议编码/解码（shot / ack / 25 位地图） |
 | `mission_dispatcher.py` | ✅ 通信完成 | `run_prescan` 时序 + 串口读写；`scan_angle` 视觉钩子待接 |
-| `obstacle_detector.py` | ❌ 待实现 | YOLOv11 / CV 分割 + 单应性或区间判定（决定 `scan_angle` 能否返回 True） |
+| `obstacle_detector.py` | 🟡 模型已就位 | 加载 `framework/dnn/yolo11_x5_obstacle.bin`（1 类 `ball`，md5 6fd337ab…） + `task_obj_obstacle.json`（yolov8 parser, 640×640 NV12）；`detect()` / `pixel_to_map()` 占位（推理由 `dnn_node_example` 完成，话题 `/hobot_dnn_detection`）|
 | `camera_pan.py` | ⏸ 不实现 | 云台控制归下位机 |
 | `path_planner.py` | ⏸ 不实现 | 路径规划归下位机 |
 | `DESIGN.md` | ⚠️ 部分过时 | 协议/状态以本 README 与 `serial_protocol.py` 为准 |
 
+### 6.3 全局扫描阶段的 yolo 模型（2026-09-23 固化）
+
+`framework/dnn/` 与 `obj_detect/dnn/` 是**两个独立链路、两个不同模型**——不要混用：
+
+| 资产 | 路径 | 用途 |
+|---|---|---|
+| 物块/标识 9 类模型 | `dnn/yolo11_x5.bin` + `dnn/classes.names` + `dnn/task_obj_v11.json` | 原任务检测（圆台物块 6 色 + 放置区标识 3 种）|
+| 障碍 1 类模型 | `framework/dnn/yolo11_x5_obstacle.bin` + `framework/dnn/classes_obstacle.names` + `framework/dnn/task_obj_obstacle.json` | 全局扫描开局 3 帧识别障碍（**仅 1 类 `ball`**，md5 6fd337ab…与物块模型不同）|
+
+两个模型的 `.bin` 内部模型名都是 `yolo11_detect_bayese_640x640_nv12`，但量化参数不同（前者
+9 类 65KB 更大），**不可互相替代**。
+
 半成品：**13 候选点照片区间标定**——0°/45° 照片人工框选斜四边形 ROI（标注器 skill
 `map-quad-annotator`，板端 :8888 页面）。当前 0° 已框 6 个（待补 label 与剩余），45° 未框。
 
-## 7. Git 与回滚
+## 8. Git 与回滚
 
 - 项目为 git 仓库（main 分支，origin 已配置），历史提交见 `git log`
 - 新增内容（framework/、README 等）独立提交，回滚方式：
@@ -145,4 +171,5 @@ is_start_frame）+ `framework/mission_dispatcher.py`
   git revert <commit>           # 反向回滚（推荐，保留历史）
   git reset --hard <commit>     # 硬回退（慎用，丢失之后改动）
   ```
-- 当前未推送本地提交时：`git status -sb` 会显示 `[ahead N]`，推送用 `git push origin main`
+- 当前未推送本地提交时：`git status -sb` 会显示 `[ahead N]`，推送用 `git push origin main`。
+- **推送前置**：仓库 `origin` 当前指向 `http://127.0.0.1:3000/neolux/GongzongAppli.git`（本机端口转发），3000 端口未启动时 `git push` 会失败；请先确认正确的远程地址。

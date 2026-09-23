@@ -45,12 +45,16 @@ def generate_launch_description():
         executable="hobot_usb_cam",
         name="prescan_usb_cam",
         parameters=[
-            {"usb_image_width": LaunchConfiguration("scan_width")},
-            {"usb_image_height": LaunchConfiguration("scan_height")},
-            {"usb_framerate": LaunchConfiguration("scan_fps")},
-            {"usb_video_device": LaunchConfiguration("scan_video_device")},
-            {"usb_pixel_format": "mjpeg"},
-            {"usb_io_method": "mmap"},
+            # 注意：节点参数名不带 usb_ 前缀（看 /opt/tros/humble/share/hobot_usb_cam/launch/hobot_usb_cam.launch.py）
+            # launch argument 名是 usb_*（带前缀），节点参数名是 video_device / image_* / framerate
+            # 之前我误用了 launch argument 名作为节点参数，导致参数没传进去 → 默认 /dev/video8 → fallback video0
+            # 2026-09-23 实机验证：用 TextSubstitution + 正确参数名 video_device 单点跑通
+            {"image_width": LaunchConfiguration("scan_width")},
+            {"image_height": LaunchConfiguration("scan_height")},
+            {"framerate": LaunchConfiguration("scan_fps")},
+            {"video_device": LaunchConfiguration("scan_video_device")},
+            {"pixel_format": "mjpeg"},
+            {"io_method": "mmap"},
         ],
         output="screen",
     )

@@ -97,10 +97,10 @@ RDK   : 三次拍完 → 地图帧 [count ID… CHK]  (仅发一次)
 **二次固化（2026-09-23）**：用户确认摄像头不会拔下来，物理 USB 接口（Hub 1 Port 2/3/4）
 为不变量。双保险：① by-id（设备 VID:PID+序列号）；② 物理端口拓扑。两者任一变化触发回归。
 
-**⚠️ 待解决**：`framework/launch/prescan.launch.py` 的 `usb_video_device` 参数传递
-未生效（`LaunchConfiguration` 没把 by-id 路径传到 `hobot_usb_cam` 节点，节点用了
-默认 `/dev/video8` + 480p，导致实机启动时打开 KS1A293 而非 LRCP）。修复方向：
-改用 `TextSubstitution(text=...)` 直接传字符串。prescan 链路端到端验证须先解决此 bug。
+**✅ 2026-09-23 已修复**：`prescan_usb_cam` 节点的 parameters key 应不带 `usb_` 前缀
+（应是 `video_device` / `image_width` / `image_height` / `framerate`）；原写法用 launch
+argument 名（带前缀）作为节点参数，导致节点用默认 `/dev/video8` fallback 到 video0。
+修正后 LRCP 正确打开（commit `5444dda`）。下一步可做端到端实机验证。
 
 ## 6. 端到端时序与代码位置
 

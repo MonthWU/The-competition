@@ -100,13 +100,13 @@ v11 链路 `obj_detect_v11.launch.py` 的 `cap_qrc_devnode` / `cap_objdet_devnod
 NV12 输入；当下用 `cap_objdet=/dev/video0`（KS1A293）做单相机冒烟时已规避分段错误，全链路
 端到端验收待回。
 
-> **⚠️ 已知风险（2026-09-23 实机启动失败发现）**：`framework/launch/prescan.launch.py` 的
-> `usb_video_device` 参数传递未生效（`LaunchConfiguration("scan_video_device")` 在
-> `hobot_usb_cam` 节点上没拿到 by-id 路径，实际打开了 `/dev/video0` 默认设备）。
-> **当前 prescan 链路不可端到端跑通**——必须先解决此传参 bug，再做实机验证。
-> 修复方向（下次专项处理）：改用 `TextSubstitution(text=...)` 直接传字符串，避免
-> `LaunchConfiguration` 解析坑；先用**单节点 + 单相机**小范围验证参数真的传过去，
-> 再迁移回完整 launch。
+> **✅ 2026-09-23 已修复**：原 `usb_video_device` 参数未生效的根因是 Node() 的 parameters key
+> 写成了 launch argument 名（带 `usb_` 前缀），但 `hobot_usb_cam` 节点接收的参数名是
+> `video_device` / `image_width` / `image_height` / `framerate`（无前缀）。节点接收不到
+> 参数 → fallback 到默认 `/dev/video8` → 打开失败 → fallback 到 `video0`（KS1A293）。
+> 修复见 commit `5444dda`。修正后 `prescan_usb_cam` 正确打开 LRCP（`/dev/video2`），
+> DNN 节点加载模型 `yolo11_detect_bayese_640x640_nv12` 成功，三节点（`prescan_usb_cam` /
+> `hobot_codec` / `prescan_dnn_example`）全部正常启动。下一步可做端到端实机验证。
 
 ## 6. 避障增量（2027 新增，framework/）
 

@@ -60,7 +60,13 @@ def find_camera(dev_nodes=["video0", "video2"]):
 
 
 def generate_launch_description():
-    cap_qrc_devnode, cap_objdet_devnode = find_camera()
+    # 三路相机任务映射（2026-09-10 用户最终确认）：
+    #   扫码 = KS1A293（max 240fps，唯一支持240fps那台）→ by-id 固定
+    #   检测 = DCXIN  → by-id 固定
+    #   全局扫描 = LRCP AR0234（不在本 launch 中使用）
+    # by-id 路径在 /dev/v4l/by-id/ 下，不受 /dev/video* 编号漂移影响。
+    cap_qrc_devnode = "/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0"
+    cap_objdet_devnode = "/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0"
     cap_qrc_devnode = "/dev/" + cap_qrc_devnode
     cap_objdet_devnode = "/dev/" + cap_objdet_devnode
     print(

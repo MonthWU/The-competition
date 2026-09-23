@@ -82,7 +82,7 @@ RDK   : 三次拍完 → 地图帧 [count ID… CHK]  (仅发一次)
 - 云台 0°→90° 为**顺时针旋转**
 - 写入 `MissionDispatcher.START_DIR_MAP`（已固化）
 
-## 5. 相机映射（2026-09-23 固化，by-id）
+## 5. 相机映射（2026-09-23 固化，by-id + 物理接口）
 
 | 任务 | 相机（USB Port）| by-id 出图路径 |
 |---|---|---|
@@ -93,6 +93,14 @@ RDK   : 三次拍完 → 地图帧 [count ID… CHK]  (仅发一次)
 - 三路同挂 USB Bus01（480M）同一 Hub，**不并发常开、每阶段用完即 kill**
 - `framework/map_scanner.py` 默认视频参数写入 `_DEFAULT_VIDEO_DEVICE` 常量
 - `/dev/video*` 编号会随插拔漂移，**永远用 by-id 路径**
+
+**二次固化（2026-09-23）**：用户确认摄像头不会拔下来，物理 USB 接口（Hub 1 Port 2/3/4）
+为不变量。双保险：① by-id（设备 VID:PID+序列号）；② 物理端口拓扑。两者任一变化触发回归。
+
+**⚠️ 待解决**：`framework/launch/prescan.launch.py` 的 `usb_video_device` 参数传递
+未生效（`LaunchConfiguration` 没把 by-id 路径传到 `hobot_usb_cam` 节点，节点用了
+默认 `/dev/video8` + 480p，导致实机启动时打开 KS1A293 而非 LRCP）。修复方向：
+改用 `TextSubstitution(text=...)` 直接传字符串。prescan 链路端到端验证须先解决此 bug。
 
 ## 6. 端到端时序与代码位置
 

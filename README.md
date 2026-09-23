@@ -76,11 +76,15 @@ CLASS 映射：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 �
 目标，且满足区域过滤（x∈[140,500]、y<420，圆环不受限）；无二维码时每 50 帧发心跳
 `0000000`。调试可 `ros2 topic echo /serial_send`。
 
-## 5. 相机分配（2026-09-23 三路相机固化，by-id 路径）
+## 5. 相机分配（2026-09-23 三路相机固化，by-id 路径 + 物理接口固定）
 
 板端实接 3 个 USB 相机，**全部挂 USB Bus01（480M）同一 Hub 下**——3 路不并发常开、每阶段用完
 立即 `kill` 释放带宽（实测带宽争抢会丢帧）。任务映射（by-id 路径固定，不受 `/dev/video*`
-编号漂移影响）：
+编号漂移影响；**物理 USB 接口长期不拔，拓扑稳定**）。
+
+> **2026-09-23 二次固化确认**：用户明确摄像头不会拔下来；物理 USB 接口（Port 2/3/4）
+> 视为不变量。因此**双保险**已就位：① by-id 路径（基于设备 VID:PID+序列号，不随插拔顺序变）；
+> ② 物理端口拓扑（Hub 1 Port 2/3/4 → KS1A293/LRCP/DCXIN）。两者任一变化都会触发回归测试。
 
 | 任务 | 相机（USB Port）| 出图 by-id 节点 | max fps | 备注 |
 |---|---|---|---|---|
@@ -95,6 +99,14 @@ v11 链路 `obj_detect_v11.launch.py` 的 `cap_qrc_devnode` / `cap_objdet_devnod
 **当前观测点（v11 链路必读）**：检测相机默认 960×544，但 YOLOv11 9 类模型内部要求 640×640
 NV12 输入；当下用 `cap_objdet=/dev/video0`（KS1A293）做单相机冒烟时已规避分段错误，全链路
 端到端验收待回。
+
+> **⚠️ 已知风险（2026-09-23 实机启动失败发现）**：`framework/launch/prescan.launch.py` 的
+> `usb_video_device` 参数传递未生效（`LaunchConfiguration("scan_video_device")` 在
+> `hobot_usb_cam` 节点上没拿到 by-id 路径，实际打开了 `/dev/video0` 默认设备）。
+> **当前 prescan 链路不可端到端跑通**——必须先解决此传参 bug，再做实机验证。
+> 修复方向（下次专项处理）：改用 `TextSubstitution(text=...)` 直接传字符串，避免
+> `LaunchConfiguration` 解析坑；先用**单节点 + 单相机**小范围验证参数真的传过去，
+> 再迁移回完整 launch。
 
 ## 6. 避障增量（2027 新增，framework/）
 

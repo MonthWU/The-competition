@@ -76,7 +76,7 @@ CLASS 映射：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 �
 目标，且满足区域过滤（x∈[140,500]、y<420，圆环不受限）；无二维码时每 50 帧发心跳
 `0000000`。调试可 `ros2 topic echo /serial_send`。
 
-## 5. 相机分配（2026-09-23 三路相机固化，by-id 路径 + 物理接口固定）
+## 5. 相机分配（2026-09-23 三路相机固化，by-id 路径 + 物理接口固定；2026-09-23 二次修正对调）
 
 板端实接 3 个 USB 相机，**全部挂 USB Bus01（480M）同一 Hub 下**——3 路不并发常开、每阶段用完
 立即 `kill` 释放带宽（实测带宽争抢会丢帧）。任务映射（by-id 路径固定，不受 `/dev/video*`
@@ -89,8 +89,24 @@ CLASS 映射：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 �
 | 任务 | 相机（USB Port）| 出图 by-id 节点 | max fps | 备注 |
 |---|---|---|---|---|
 | 扫码 qrc_skandier | **KS1A293**（Port 2）| `/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0` | 240 | 唯一支持 240fps@640×400，兼容黑白二维码高速抓拍 |
-| 检测 obj_detect | **DCXIN Camera**（Port 4）| `/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0` | 90 | yolov11 9 类（圆台物块 + 放置区标识）|
-| 全局扫描 framework/map_scanner | **LRCP AR0234**（Port 3）| `/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0` | 90 | 1920×1200 MJPG，开局斜视看 2400×2400 全场 |
+| 检测 obj_detect | **LRCP AR0234**（Port 3）| `/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0` | 90 | yolov11 9 类（圆台物块 + 放置区标识）；实测拍到物块区画面 |
+| 全局扫描 framework/map_scanner | **DCXIN Camera**（Port 4）| `/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0` | 90 | 1920×1080 MJPG，开局斜视看 2400×2400 全场 |
+> **⚠️ 2026-09-23 二次修正**：通过实机画面确认，检测 ↔ 全局扫描 之前物理接线与代码
+> 假设反了——LRCP AR0234 实际装在检测位（拍到物块区），DCXIN Camera 实际装在车顶
+> 全局扫描位。已对调 `obj_detect_v11.launch.py` / `prescan.launch.py` /
+> `framework/map_scanner.py` 三处 by-id。
+
+> **⚠️ DCXIN 固件设计问题（2026-09-23 实测）**：DCXIN 出厂默认 `auto_exposure=1 (Manual Mode)` +
+> `brightness=50` + `exposure_time_absolute=78` —— **Linux uvcvideo 驱动下默认输出全黑**
+> （亮度 28.6/255）。需要每次上电/USB 复位后**手动执行**：
+> ```
+> v4l2-ctl -d /dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0 \
+>   --set-ctrl=auto_exposure=3 --set-ctrl=brightness=128 \
+>   --set-ctrl=exposure_time_absolute=156 --set-ctrl=gain=0
+> ```
+> **修复后亮度 158.4/255（正常）**。另外 dmesg 报 `Failed to query UVC control 5/7/17` 警告
+> （-32 EPIPE），是 vendor 固件的控制查询失败，**Linux uvcvideo 安全忽略导致默认参数错误**。
+> 下次 DCXIN 不出图 → 先 v4l2-ctl --get-ctrl=auto_exposure 看是不是 1。
 
 v11 链路 `obj_detect_v11.launch.py` 的 `cap_qrc_devnode` / `cap_objdet_devnode` 默认按上表
 写死；`framework/map_scanner.py` 默认设备同上。原 `obj_detect.launch.py` 的 `find_camera()`

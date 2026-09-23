@@ -15,8 +15,9 @@ from ament_index_python.packages import get_package_share_directory
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
-# 全局扫描相机 by-id（2026-09-23 固化）
-SCAN_VIDEO_DEVICE = "/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0"
+# 全局扫描相机 by-id（2026-09-23 用户最终确认后二次修正）：
+#   实际接线映射：检测 = LRCP AR0234（拍物块区），全局扫描 = DCXIN（车顶）
+SCAN_VIDEO_DEVICE = "/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0"
 SCAN_WIDTH = 640
 SCAN_HEIGHT = 640
 SCAN_FPS = 30
@@ -99,6 +100,22 @@ def generate_launch_description():
         arguments=["--ros-args", "--log-level", "warn"],
         output="screen",
     )
+    # Web 预览：订阅 LRCP 的 /image 推流到板端 :8000（nginx via websocket 节点）
+    prescan_web_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("websocket"),
+                "launch/websocket.launch.py",
+            )
+        ),
+        launch_arguments={
+            "websocket_image_topic": "/image",
+            "websocket_image_type": "mjpeg",
+            "websocket_smart_topic": "hobot_dnn_detection",
+            "websocket_only_show_image": "True",
+        }.items(),
+    )
+
 
     return LaunchDescription(
         [
@@ -111,6 +128,7 @@ def generate_launch_description():
             codec_decode_node,
             shm_node,
             dnn_node,
+            prescan_web_node,
         ]
     )
 # 注：prescan_dnn_node（订阅 DNN 输出的解析节点）由 mission_dispatcher.scan_angle()

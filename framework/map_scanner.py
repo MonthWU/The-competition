@@ -13,7 +13,8 @@ class MapScanner:
     # （会随插拔顺序漂移）。原占位 /dev/video3 已过时。
     def __init__(
         self,
-        video_device="/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0",
+        # 2026-09-23 二次修正：实际接线 = DCXIN 在车顶全局扫描位
+        video_device="/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0",
         width=1280,
         height=720,
     ):

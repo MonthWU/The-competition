@@ -82,13 +82,27 @@ RDK   : 三次拍完 → 地图帧 [count ID… CHK]  (仅发一次)
 - 云台 0°→90° 为**顺时针旋转**
 - 写入 `MissionDispatcher.START_DIR_MAP`（已固化）
 
-## 5. 相机映射（2026-09-23 固化，by-id + 物理接口）
+## 5. 相机映射（2026-09-23 固化，by-id + 物理接口；2026-09-23 二次修正对调）
 
 | 任务 | 相机（USB Port）| by-id 出图路径 |
 |---|---|---|
 | 扫码 qrc_skandier | KS1A293（Port 2）| `usb-KINGSEN_KS1A293-video-index0` |
-| 检测 obj_detect | DCXIN（Port 4）| `usb-DCXIN_DCXIN_Camera_01.00.000-video-index0` |
-| 全局扫描 framework/map_scanner | LRCP AR0234（Port 3）| `usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0` |
+| 检测 obj_detect | LRCP AR0234（Port 3）| `usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0` |
+| 全局扫描 framework/map_scanner | DCXIN（Port 4）| `usb-DCXIN_DCXIN_Camera_01.00.000-video-index0` |
+
+**二次修正（2026-09-23）**：实机画面确认检测 ↔ 全局扫描 之前反了——
+LRCP 实际装在检测位（拍到物块区），DCXIN 实际装在车顶扫描位。
+代码已对调三处（`obj_detect_v11.launch.py` / `prescan.launch.py` / `framework/map_scanner.py`）。
+
+**DCXIN 固件设计问题（2026-09-23 实测）**：出厂默认 `auto_exposure=1 (Manual Mode)` 暗档，
+Linux uvcvideo 驱动下输出接近全黑（亮度 28.6/255）。每次上电/USB 复位后需手动调：
+```
+v4l2-ctl -d /dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0 \
+  --set-ctrl=auto_exposure=3 --set-ctrl=brightness=128 \
+  --set-ctrl=exposure_time_absolute=156 --set-ctrl=gain=0
+```
+修复后亮度 158.4/255。根因：dmesg 报 UVC control 5/7/17 查询 EPIPE，
+uvcvideo 安全忽略 → 默认参数错误。
 
 - 三路同挂 USB Bus01（480M）同一 Hub，**不并发常开、每阶段用完即 kill**
 - `framework/map_scanner.py` 默认视频参数写入 `_DEFAULT_VIDEO_DEVICE` 常量

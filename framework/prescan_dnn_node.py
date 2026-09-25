@@ -1,6 +1,6 @@
 """prescan_dnn_node —— 全局扫描 DNN 订阅节点（2026-09-23）。
 
-订阅 /hobot_dnn_detection（PerceptionTargets），过滤 type=='ball' 的目标，
+订阅 /hobot_dnn_detection（PerceptionTargets），过滤 type=='block' 的目标，
 把 bbox 中心 + 置信度回调给 mission_dispatcher.scan_angle()。
 
 共享内存输入：/hbmem_img（hobot_usb_cam → hobot_codec_decode 的 NV12 输出，640×640）。
@@ -36,7 +36,7 @@ class PrescanDnnNode(Node):
     def _cb(self, msg: PerceptionTargets):
         balls = []
         for t in msg.targets:
-            if t.type == "ball":
+            if t.type == "block":
                 roi = t.rois[0].rect
                 cx = roi.x_offset + roi.width // 2
                 cy = roi.y_offset + roi.height // 2

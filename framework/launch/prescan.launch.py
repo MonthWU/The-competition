@@ -19,9 +19,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 #   实际接线映射：检测 = LRCP AR0234（拍物块区），全局扫描 = DCXIN（车顶）
 SCAN_VIDEO_DEVICE = "/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0"
 SCAN_WIDTH = 640
-SCAN_HEIGHT = 640
+# 2026-09-25：原值 640x640 在 DCXIN 上**不受支持**（该相机 MJPG 仅提供
+# 640x360 / 1280x720 / 1920x1080），会导致起相机失败。改为 640x360。
+# 模型输入仍是 640x640，由 dnn_node_example 内部自动 resize（已验证尺寸不匹配无影响）。
+SCAN_HEIGHT = 360
 SCAN_FPS = 30
 DNN_TASK_JSON = "/root/dev_ws/appli/framework/dnn/task_obj_obstacle.json"
+SETUP_SH = "/root/dev_ws/appli/framework/setup_dcxin.sh"   # 非 ROS 场景的手动备用工具
 
 
 def generate_launch_description():
@@ -56,6 +60,16 @@ def generate_launch_description():
             {"video_device": LaunchConfiguration("scan_video_device")},
             {"pixel_format": "mjpeg"},
             {"io_method": "mmap"},
+            # DCXIN 亮度/增益修正（2026-09-25，实测有效）
+            # 背景：该机固件只支持 auto_exposure=1/3，没有真正的 Auto(0)；默认的
+            #       3（光圈优先）在 UVC 上无光圈可调、曝光时间控制被禁用(inactive)，
+            #       画面亮度实际只由 brightness/gain 决定，出厂值 50/0 明显偏暗
+            #       （实测画面均值 68.6，中央区仅 28.8）。
+            # 关键：必须通过**节点参数**设置 —— 节点启动时会写入自己的 brightness
+            #       默认值(50)，会覆盖 launch 之前用 v4l2-ctl 做的预设（已实测被覆盖）。
+            #       而 gain 默认 -1 表示"不修改"。改为 128/48 后画面均值 138.9。
+            {"brightness": 128},
+            {"gain": 48},
         ],
         output="screen",
     )

@@ -37,14 +37,14 @@ class ObstacleDetector:
             self._H = np.load(homography_path)
 
     def detect_from_perception(self, perception) -> list:
-        """从 PerceptionTargets 解析 ball 检测结果。
+        """从 PerceptionTargets 解析 block 检测结果。
 
         返回 [(cx_px, cy_px, conf), ...] 像素坐标（640×640）。
         不做单应性变换，由调用方（scan_angle）决定是否映射到网格。
         """
         balls = []
         for t in perception.targets:
-            if t.type == "ball":
+            if t.type == "block":
                 roi = t.rois[0].rect
                 cx = roi.x_offset + roi.width // 2
                 cy = roi.y_offset + roi.height // 2

@@ -8,7 +8,7 @@ ANGLES = (0, 45, 90)
 
 
 class MapScanner:
-    # 全局扫描 = LRCP AR0234（2026-09-10 用户确认），by-id 路径固定
+    # 全局扫描 = DCXIN（2026-09-23 二次修正，实机画面确认），by-id 路径固定
     # 出图节点 /dev/video2 / 伴随节点 /dev/video3 均不可单独使用 /dev/video* 编号
     # （会随插拔顺序漂移）。原占位 /dev/video3 已过时。
     def __init__(

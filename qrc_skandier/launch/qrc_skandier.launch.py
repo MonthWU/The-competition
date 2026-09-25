@@ -14,7 +14,11 @@ from ament_index_python.packages import get_package_prefix
 
 def generate_launch_description():
     cap_qrc_dev_arg = DeclareLaunchArgument(
-        "cap_qrc", default_value="/dev/video2", description="qrcode camera device"
+        # by-id 固定（2026-09-25）：原默认 "/dev/video2" 实测是 LRCP AR0234（检测相机），
+        # 直接 launch 会打开错误相机且不报错。改为 KS1A293 的 by-id 路径。
+        "cap_qrc",
+        default_value="/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0",
+        description="qrcode camera device (by-id, KINGSEN KS1A293)",
     )
 
     # TODO: 不能同时开两个？ : 4 usb port are in the same bus. and the usb camera speed is too high

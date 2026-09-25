@@ -6,9 +6,34 @@ from std_msgs.msg import String
 
 import cv2 as cv
 import numpy as np
+import os
 
 from utils.neo_img_trans import cv2ros
 from utils.threCam import ThreadCap
+
+
+def resolve_cam_identity(dev_path: str) -> tuple:
+    """把 /dev/videoN 或 by-id 路径解析为 (内核卡名, by-id 名)。
+
+    用于在打开相机前校验"这到底是不是扫码相机"，避免静默打开错误设备。
+    """
+    real = os.path.realpath(dev_path)
+    name = os.path.basename(real)
+    card = ""
+    try:
+        with open(f"/sys/class/video4linux/{name}/name") as f:
+            card = f.read().strip()
+    except OSError:
+        pass
+    byid = ""
+    try:
+        for entry in sorted(os.listdir("/dev/v4l/by-id")):
+            if os.path.realpath(os.path.join("/dev/v4l/by-id", entry)) == real:
+                byid = entry
+                break
+    except OSError:
+        pass
+    return card, byid
 
 
 class QrcCam(Node):
@@ -19,16 +44,43 @@ class QrcCam(Node):
         self.declare_parameter("fps", 240)
         self.declare_parameter("img_width", 640)
         self.declare_parameter("img_height", 400)
+        # 期望的相机身份关键字（内核卡名 / by-id 名任一命中即通过）。
+        # 扫码相机 = KINGSEN KS1A293（唯一支持 240fps@640x400 那台）。
+        # 传空字符串 "" 可跳过校验（仅在明确知道后果时使用）。
+        self.declare_parameter("expect_id", "KS1A293")
         # self.declare_parameter("img_fourcc", cv.VideoWriter.fourcc(*"MJPG"))
 
+        cam_idx = self.get_parameter("cam_idx").get_parameter_value().string_value
+        expect_id = (
+            self.get_parameter("expect_id").get_parameter_value().string_value
+        )
+
+        card, byid = resolve_cam_identity(cam_idx)
         self.get_logger().info(f"QrcCam Node {name}")
+        self.get_logger().info(
+            f'cam_idx="{cam_idx}" -> {os.path.realpath(cam_idx)} '
+            f'card="{card}" by-id="{byid}"'
+        )
+        if expect_id and expect_id not in f"{card} {byid}":
+            self.get_logger().error(
+                f"相机身份校验失败：期望标识 '{expect_id}'，实际 card=\"{card}\" "
+                f'by-id="{byid}"（cam_idx={cam_idx}）。'
+                f"扫码相机必须是 usb-KINGSEN_KS1A293-video-index0；"
+                f"拒绝启动，避免静默扫不出码。"
+            )
+            raise RuntimeError(
+                f"qrc_cam camera identity mismatch: expect '{expect_id}', "
+                f'got card="{card}" by-id="{byid}"'
+            )
+        self.get_logger().info(f"相机身份校验通过：命中 '{expect_id}'")
+
         self.cam = ThreadCap(
-            self.get_parameter("cam_idx").get_parameter_value().string_value,
+            cam_idx,
             self.get_parameter("img_width").get_parameter_value().integer_value,
             self.get_parameter("img_height").get_parameter_value().integer_value,
             self.get_parameter("fps").get_parameter_value().integer_value,
         )
-        self.get_logger().info(f'Using {self.get_parameter("cam_idx").get_parameter_value().integer_value} for QRCcode Scan')
+        self.get_logger().info(f"Using {cam_idx} for QRCcode Scan")
 
         # self.cam = cv.VideoCapture(
         #     self.get_parameter("cam_idx").get_parameter_value().integer_value

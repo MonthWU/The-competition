@@ -164,7 +164,7 @@ argument 名（带前缀）作为节点参数，导致节点用默认 `/dev/vide
 ### 已确认
 
 - [x] START_DIR_MAP（4→右列向下 / 24→底行向左）
-- [x] 全局扫描相机 = LRCP AR0234 by-id
-- [x] 检测相机 = DCXIN by-id
+- [x] 全局扫描相机 = DCXIN by-id
+- [x] 检测相机 = LRCP AR0234 by-id
 - [x] 扫码相机 = KS1A293 by-id
 - [x] 串口协议 v3（[] 帧）

@@ -1,6 +1,6 @@
 """prescan.launch —— 全局扫描子 launch（2026-09-23）。
 
-启动 LRCP AR0234（by-id 固定）+ dnn_node_example（task=task_obj_obstacle.json，1 类 ball）
+启动 DCXIN（by-id 固定）+ dnn_node_example（task=task_obj_obstacle.json，1 类 ball）
 + prescan_dnn_node，供 mission_dispatcher.scan_angle() subprocess 调用。
 
 分辨率：640×640 MJPG（与 yolo11 障碍模型输入对齐）。

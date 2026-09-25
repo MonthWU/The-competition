@@ -80,9 +80,20 @@ class ThreadCap:
         return self.cap.isOpened()
 
     def release(self):
+        """停止采集线程并释放设备。
+
+        顺序至关重要：必须先 cap.release() 断流，让阻塞在 cap.read() 里的采集线程
+        立即返回失败，否则 thread.join() 可能无限等待——在 ROS 订阅回调里调用时
+        会导致节点永远无法退出（实测现象：打印了"释放摄像头"却卡住不退出）。
+        join 另加超时兜底。
+        """
         self.stop_flag = True
-        self.thread.join()
-        self.cap.release()
+        try:
+            self.cap.release()          # 先断流，唤醒阻塞中的 read()
+        except Exception:
+            pass
+        if self.thread.is_alive():
+            self.thread.join(timeout=2.0)
 
 
 # 使用 ThreadCap 类

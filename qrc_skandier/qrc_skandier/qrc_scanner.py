@@ -34,6 +34,7 @@ class QrcScanner(Node):
         )
         self.res_pub = self.create_publisher(String, "qrc_result", 10)
         self.show = True
+        self._done = False
         self.shutdown_sub = self.create_subscription(
             String,
             "kill_qrc",
@@ -78,17 +79,27 @@ class QrcScanner(Node):
         #         self.show = False
 
     def shutdown(self, msg):
-        self.get_logger().info(f"Shutdown: {msg.data}")
-        self.destroy_node()
-        self.get_logger().info(f"Destroyed node {self.get_name()}")
-        rclpy.shutdown()
+        # destroy_node() 之后访问节点句柄会抛 InvalidHandle，故日志前置；
+        # 节点销毁统一交给 main 的 finally。
+        self.get_logger().info(f"收到 kill 信号: {msg.data}，节点 {self.get_name()} 退出")
+        # 不在回调里调用 rclpy.shutdown()（会让 rclpy.spin() 挂住、进程残留），
+        # 改为置标志位，由 main 的 spin_once 循环统一收尾。
+        self._done = True
 
 
 def main():
     rclpy.init()
     qrc_scanner = QrcScanner("qrc_cam")
-    rclpy.spin(qrc_scanner)
-    rclpy.shutdown()
+    try:
+        while rclpy.ok() and not qrc_scanner._done:
+            rclpy.spin_once(qrc_scanner, timeout_sec=0.2)
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
+    finally:
+        qrc_scanner.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+    return 0
 
 
 if __name__ == "__main__":

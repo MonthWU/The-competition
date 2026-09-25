@@ -111,6 +111,7 @@ class QrcCam(Node):
         self.frame_count = 0
         self.fps_timer = self.create_timer(1, self.fps_callback)
 
+        self._done = False
         self.shutdown_sub = self.create_subscription(
             String,
             "kill_qrc",
@@ -139,18 +140,31 @@ class QrcCam(Node):
         self.frame_count = 0
 
     def shutdown(self, msg):
-        self.get_logger().info(f"Shutdown: {msg.data}")
-        self.destroy_node()
+        # 注意：destroy_node() 之后不能再访问节点句柄（get_name / get_logger 会抛
+        # rclpy._rclpy_pybind11.InvalidHandle）。故日志与硬件释放全部前置，
+        # 节点销毁统一交给 main 的 finally，避免二次销毁。
+        self.get_logger().info(f"收到 kill 信号: {msg.data}，释放摄像头并退出")
         self.cam.release()
-        self.get_logger().info(f"Destroyed node {self.get_name()}")
-        rclpy.shutdown()
+        self.get_logger().info(f"节点 {self.get_name()} 已释放摄像头")
+        # 不在回调里调用 rclpy.shutdown()：实测会让 rclpy.spin() 挂住不返回、
+        # 进程残留。改为置标志位，由 main 的 spin_once 循环统一收尾
+        # （与 qrc_cam_killer 同款，已实测可靠）。
+        self._done = True
 
 
 def main():
     rclpy.init()
     qrccam = QrcCam("qrc_cam")
-    rclpy.spin(qrccam)
-    rclpy.shutdown()
+    try:
+        while rclpy.ok() and not qrccam._done:
+            rclpy.spin_once(qrccam, timeout_sec=0.2)
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
+    finally:
+        qrccam.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+    return 0
 
 
 if __name__ == "__main__":

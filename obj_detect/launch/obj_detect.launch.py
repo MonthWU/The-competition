@@ -46,14 +46,33 @@ def find_camera(dev_nodes=["video0", "video2"]):
     """
     根据摄像头的最大帧率，返回两个摄像头设备节点
     返回顺序：帧率高的在前，作为二维码摄像头（因为他是黑白的）
+
+    ⚠️ 已弃用（2026-09-25）：改用 by-id 固定（见下方 CAM_QRC / CAM_OBJDET）。
+    帧率排序无身份校验，相机掉线或 /dev/video* 重排时会静默指错相机。
+    保留仅供历史参考，generate_launch_description() 不再调用。
     """
     return sorted(dev_nodes, key=lambda x: get_max_fps(x), reverse=True)
 
 
+# 三路相机 by-id 固化（2026-09-23 二次修正后），与 launch/run_all.launch.py 保持一致。
+CAM_QRC = "/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0"                      # 扫码
+CAM_OBJDET = "/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0"  # 检测
+
+
+def _check_cam(path: str, role: str) -> str:
+    """校验 by-id 路径存在；缺失时大声告警（不回退到猜测模式）。"""
+    if not os.path.exists(path):
+        print(
+            f"[obj_detect] 错误：{role}相机 {path} 不存在！请检查 USB 接线（by-id 路径）。"
+            f"已禁用猜测回退，避免静默打开错误相机。"
+        )
+    return path
+
+
+
 def generate_launch_description():
-    cap_qrc_devnode, cap_objdet_devnode = find_camera()
-    cap_qrc_devnode = "/dev/" + cap_qrc_devnode
-    cap_objdet_devnode = "/dev/" + cap_objdet_devnode
+    cap_qrc_devnode = _check_cam(CAM_QRC, "扫码")
+    cap_objdet_devnode = _check_cam(CAM_OBJDET, "检测")
     print(
         f"cap_qrc_devnode: {cap_qrc_devnode}, cap_objdet_devnode: {cap_objdet_devnode}"
     )

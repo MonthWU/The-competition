@@ -85,7 +85,12 @@ def generate_launch_description():
     )
 
     cap_qrc_dev_arg = DeclareLaunchArgument(
-        "cap_qrc", default_value=cap_qrc_devnode, description="qrcode camera device"
+        # 说明：本 launch 当前**不含**扫码链路（只有 obj_camd / codec / websocket /
+        # dnn / serial / dumper），扫码由 launch/run_all.launch.py 独立拉起。
+        # 此参数为预留接口，默认值已 by-id 固化，避免将来接入时又退回 /dev/video* 猜测。
+        "cap_qrc",
+        default_value=cap_qrc_devnode,
+        description="qrcode camera device (预留，本 launch 未接入)",
     )
 
     config_file_launch_arg = DeclareLaunchArgument(

@@ -70,7 +70,10 @@ appli/
 | 二维码 | `FF 37 <UTF-8内容> FE` | 有效码连发 4 次 |
 | 检测目标 | `FF CLASS XL XH YL YH FE` | 坐标低 8 位在前；图像系 960×544 |
 
-CLASS 映射：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 · rof=0x34 红目标 · gof=0x35 绿目标 · bof=0x36 蓝目标`
+CLASS 映射（v11 9 类新模型，`obj_serial.py` 已实现）：
+`red1=0x41 · black1=0x42 · green1=0x43 · yellow1=0x44 · blue1=0x45 · blue2=0x46`（圆台物块，每帧只发离参考点最近 1 个）·
+`targetOne=0x51 · targetTwo=0x52 · targetThree=0x53`（放置区标识，全部发送）。
+旧模型（250720_v5s）兼容保留：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 · rof=0x34 红目标 · gof=0x35 绿目标 · bof=0x36 蓝目标`
 
 行为规则：默认 mode=2（二维码+检测都发）→ 扫到有效码切 mode=1；只发离画面中心最近的
 目标，且满足区域过滤（x∈[140,500]、y<420，圆环不受限）；无二维码时每 50 帧发心跳

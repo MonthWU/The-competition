@@ -28,6 +28,7 @@ setup(
             "obj_serial = obj_detect.obj_serial:main",
             "obj_camd = obj_detect.obj_camd:main",
             "obj_video_dumper = obj_detect.obj_vid_dumper:main",
+            "obj_dnn = obj_detect.obj_dnn:main",
         ],
     },
 )

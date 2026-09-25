@@ -72,8 +72,6 @@ def generate_launch_description():
     # by-id 路径在 /dev/v4l/by-id/ 下，不受 /dev/video* 编号漂移影响。
     cap_qrc_devnode = "/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0"
     cap_objdet_devnode = "/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0"
-    cap_qrc_devnode = "/dev/" + cap_qrc_devnode
-    cap_objdet_devnode = "/dev/" + cap_objdet_devnode
     print(
         f"cap_qrc_devnode: {cap_qrc_devnode}, cap_objdet_devnode: {cap_objdet_devnode}"
     )

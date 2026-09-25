@@ -72,25 +72,25 @@ def _check_cam(path: str, role: str) -> str:
     return path
 
 
+
 def generate_launch_description():
     cap_qrc_devnode = _check_cam(CAM_QRC, "扫码")
     cap_objdet_devnode = _check_cam(CAM_OBJDET, "检测")
-
-    config_file_launch_arg = DeclareLaunchArgument(
-        "dnn_example_config_file",
-        default_value=TextSubstitution(text="/root/dev_ws/appli/dnn/task_obj.json"),
-    )
 
     obj_detection = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory("obj_detect"),
-                "launch/obj_detect.launch.py",
+                # 2026-09-25（P6）：一键入口切到 v11 native 链路 —— obj_dnn 板端原生推理
+                # + 9 类物块/标识模型（dnn/yolo11_x5.bin）。
+                # 原 obj_detect.launch.py（dnn_node_example + 老 6 类 task_obj.json）因模型
+                # 输出格式与 TROS parser 不兼容会段错误，已弃用；文件保留以便回退。
+                "launch/obj_detect_v11_native.launch.py",
             )
         ),
         launch_arguments={
             "cap_objdet": cap_objdet_devnode,
-            "dnn_example_config_file": LaunchConfiguration("dnn_example_config_file"),
+            "cap_qrc": cap_qrc_devnode,
         }.items(),
     )
 
@@ -108,7 +108,6 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            config_file_launch_arg,
             obj_detection,
             qrc_skandier,
         ]

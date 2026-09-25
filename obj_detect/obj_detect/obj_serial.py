@@ -61,9 +61,38 @@ class ObjSerial(Node):
             String, "qrc_result", self.qrc_callback, 10
         )
         self.serial_send_pub = self.create_publisher(String, "serial_send", 10)
-        self.xin = 180
-        self.yin = 420
-        self.ref_pt = (324, 204)  # "最近目标"参考点（沿原项目）
+
+        # ---- 区域过滤 + "最近目标"参考点（2026-09-25 参数化补齐）----
+        # 检测链路实际图像系为 640x480（obj_cam.launch.py 默认）。
+        # 历史遗留：self.xin=180 / self.yin=420 定义了却从未被引用 —— README §4 声称的
+        # 区域过滤此前**并未实现**。此处补上；默认阈值由旧规格等比换算：
+        #   旧规格（README §4，960x544 图像系）：x∈[140,500]、y<420
+        #   换算到 640x480：x∈[93,333]、y<371
+        # 现场可用参数覆盖（ros2 param set / launch 参数）重新标定。
+        self.declare_parameter("ref_pt_x", 320)            # "最近目标"参考点，默认画面中心
+        self.declare_parameter("ref_pt_y", 240)
+        self.declare_parameter("enable_roi_filter", True)  # 物块区域过滤开关
+        # 默认值已按 2026-09-25 实测画面修正：现场 4 个物块的实际图像坐标为
+        #   yellow1 (614,438) / black1 (520,406) / black1 (557,397) / red1 (621,184)
+        # 即集中在画面右侧 x∈[506,639]、y∈[160,476]。若沿用 README 旧规格（960x544）
+        # 等比换算出的 x∈[93,333]，会把全部目标滤掉（实测：串口一条都不发）。
+        # 现默认外扩为覆盖实测范围（等价于只滤左侧干扰），**现场仍需复核标定**。
+        self.declare_parameter("roi_x_min", 380)
+        self.declare_parameter("roi_x_max", 640)
+        self.declare_parameter("roi_y_max", 480)
+
+        self.ref_pt = (
+            float(self.get_parameter("ref_pt_x").value),
+            float(self.get_parameter("ref_pt_y").value),
+        )
+        self.enable_roi = bool(self.get_parameter("enable_roi_filter").value)
+        self.roi_x_min = float(self.get_parameter("roi_x_min").value)
+        self.roi_x_max = float(self.get_parameter("roi_x_max").value)
+        self.roi_y_max = float(self.get_parameter("roi_y_max").value)
+        self.get_logger().info(
+            f"ref_pt={self.ref_pt}, roi_filter={self.enable_roi} "
+            f"x∈[{self.roi_x_min},{self.roi_x_max}] y<={self.roi_y_max}"
+        )
         self.mode = 2  # 0: send qrcode info; 1: send obj det results; 2: send both
         # self.call_opened() # no send a startup signal. Send all even empty qrcode data
         self.cnt = 0
@@ -97,19 +126,29 @@ class ObjSerial(Node):
         # print(msg.targets)
         if self.mode == 0:
             return
-        def dist_to_ref(target):
+
+        def center(target):
             roi = target.rois[0].rect
-            cx = roi.x_offset + roi.width // 2
-            cy = roi.y_offset + roi.height // 2
+            return (roi.x_offset + roi.width // 2, roi.y_offset + roi.height // 2)
+
+        def in_roi(target):
+            """物块区域过滤：只保留"物块投放区"内的目标（可用参数关闭）。"""
+            if not self.enable_roi:
+                return True
+            cx, cy = center(target)
+            return (self.roi_x_min <= cx <= self.roi_x_max) and (cy <= self.roi_y_max)
+
+        def dist_to_ref(target):
+            cx, cy = center(target)
             return float(np.hypot(cx - self.ref_pt[0], cy - self.ref_pt[1]))
 
-        # 物块族（圆台物块 6 色 / 旧 of）：每帧只发离参考点最近的 1 个
+        # 物块族（圆台物块 6 色 / 旧 of）：区域过滤后，每帧只发离参考点最近的 1 个
         blocks = [t for t in msg.targets if is_block(t.type)]
+        if self.enable_roi:
+            blocks = [t for t in blocks if in_roi(t)]
         if blocks:
             nearest = min(blocks, key=dist_to_ref)
-            roi = nearest.rois[0].rect
-            ctx = roi.x_offset + roi.width // 2
-            cty = roi.y_offset + roi.height // 2
+            ctx, cty = center(nearest)
             conf = nearest.rois[0].confidence
             self.get_logger().info(f"{nearest.type}, {ctx}, {cty}, {conf:.2f}")
             self.send(nearest.type, ctx, cty)
@@ -118,9 +157,7 @@ class ObjSerial(Node):
         for tg in msg.targets:
             if not is_mark(tg.type):
                 continue
-            roi = tg.rois[0].rect
-            ctx = roi.x_offset + roi.width // 2
-            cty = roi.y_offset + roi.height // 2
+            ctx, cty = center(tg)
             conf = tg.rois[0].confidence
             self.get_logger().info(f"{tg.type}, {ctx}, {cty}, {conf:.2f}")
             self.send(tg.type, ctx, cty)

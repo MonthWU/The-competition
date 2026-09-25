@@ -54,11 +54,17 @@
 **已就绪**：相机 DCXIN（640×360 + 亮度修正）、模型 `zaw.bin`
 （1 类 `block`、box 为 NHWC、实测兼容 TROS）。
 
-- [ ] **修 3 个代码断点**（与模型无关，阻断整条链路）：
-      - `mission_dispatcher.scan_angle()` 引用未定义的 `self.obstacle_detector` /
-        `self.road_judge` → `AttributeError`
-      - 同函数用 `_grid_id(...)`，但文件顶部 import 的是 `grid_id` → `NameError`
-      - `road_judge.RoadJudge.__init__` 直接 `raise NotImplementedError` → 类无法实例化
+- [x] **修代码断点**（2026-09-25 完成）—— 实际修了 **4 处**（比原盘点多 1 处）：
+      - `mission_dispatcher.__init__` 补齐 `obstacle_detector` / `road_judge` /
+        `_launch_proc` / `_rclpy_init`（此前一进 `scan_angle` 就 AttributeError）
+      - `_grid_id(...)` → `grid_id(...)`（该名字本就 import 自 serial_protocol）
+      - `RoadJudge.__init__` 去掉 `raise NotImplementedError`；并把语义混用的
+        `hit_threshold` 拆为 `hit_threshold`（网格距离 1.5）/ `conf_threshold`（置信度 0.5）
+      - **新发现**：`obstacle_detector.py` 的 `from map_model import grid_id` 是错的
+        （该名字实际定义在 `serial_protocol.py`）→ 模块 **import 即 ImportError**，
+        framework 整条链路连启动都进不去
+      - 验证：`MissionDispatcher()` 可构造、视觉组件可实例化、
+        `judge_from_hits({1:0.9, 3:0.7, 13:0.2, 6:0.8})` → `[(0,1),(0,3)]`（正确过滤）
 - [ ] **识别率问题**：实测对现场障碍物最高响应仅 **0.125**（配置阈值 0.4），
       疑似目标过小 / 与训练场景差异；提亮画面**无效**（实测响应反而降到 0.029）。
       需确认模型训练数据与现场摆放距离
@@ -71,14 +77,11 @@
 
 ## 3. 文档同步
 
-- [ ] `README` §4：区域过滤规格写的是「图像系 960×544、x∈[140,500]、y<420」，
-      与实际不符（实际 640×480）。`obj_serial` 已参数化并默认改为
-      `x∈[380,640]、y≤480`（基于实测物块位置外扩）
-- [ ] `README` §5：DCXIN 的 `v4l2-ctl` 修复命令需修正 —— 该机 `auto_exposure`
-      **只支持 1(Manual) / 3(Aperture Priority)，没有 Auto(0)**；且必须通过
-      `hobot_usb_cam` **节点参数**设置（节点启动时会用自己的默认值覆盖 launch
-      之前的 v4l2 预设，已实测）
-- [ ] `README` §6.2：`obstacle_detector` / `road_judge` 状态与实际对齐
+- [x] `README` §4：图像系 960×544 → **640×480**；区域过滤补实现说明 + 参数化（2026-09-25）
+- [x] `README` §5：DCXIN 亮度问题**重写** —— 无 Auto(0)、必须走 `hobot_usb_cam`
+      节点参数、实测数据（2026-09-25）
+- [x] `README` §6.2：`obstacle_detector` / `road_judge` / `mission_dispatcher`
+      状态与实际对齐（2026-09-25）
 
 ---
 

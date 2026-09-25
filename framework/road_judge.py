@@ -25,11 +25,20 @@ def nearest_candidate(r: float, c: float) -> tuple:
 
 
 class RoadJudge:
-    def __init__(self, hit_threshold: float = 1.5):
-        """hit_threshold：障碍网格坐标与候选点的最大判定距离（5×5 网格单位）。
-        误差宽松：1.5 格以内视为命中该候选点（可按现场实测调整）。
+    def __init__(self, hit_threshold: float = 1.5, conf_threshold: float = 0.5):
+        """构造判定器（2026-09-25 修正）。
+
+        此前 __init__ 直接 raise NotImplementedError —— 导致 RoadJudge
+        完全无法实例化，连带 mission_dispatcher 的视觉链路整体不可用。
+
+        hit_threshold  ：judge() 用的**网格距离**阈值（5×5 网格单位，默认 1.5）。
+                         误差宽松：该距离以内视为命中候选点（可按现场实测调整）。
+        conf_threshold ：judge_from_hits() 用的**置信度**阈值（默认 0.5）。
+        注：二者语义不同（网格距离 vs 置信度），此前共用同一个字段名
+            self.hit_threshold 容易混淆，现分开命名。
         """
-        raise NotImplementedError("TODO: 误差参数按标定实测校准")
+        self.hit_threshold = hit_threshold
+        self.conf_threshold = conf_threshold
 
     def judge(self, obstacles: list) -> set:
         """输入障碍网格坐标列表 [(r,c), ...]，返回命中的障碍候选点集合 {(r,c)}。
@@ -58,7 +67,7 @@ class RoadJudge:
 
         过滤规则（2026-09-23 用户定义）：
           1. 候选点有效性校验：grid_id 必须落在 OBSTACLE_CANDIDATES_13
-          2. 置信度 >= hit_threshold（默认 0.5）
+          2. 置信度 >= conf_threshold（默认 0.5）
           3. 返回 {(r, c), ...} 供 MapModel.set_obstacles()
         """
         result: set = set()
@@ -66,7 +75,7 @@ class RoadJudge:
             r, c = divmod(grid_id, 5)
             if (r, c) not in OBSTACLE_CANDIDATES_13:
                 continue
-            if conf < self.hit_threshold:
+            if conf < self.conf_threshold:
                 continue
             result.add((r, c))
         return result

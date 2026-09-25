@@ -36,7 +36,7 @@ from obstacle_detector import ObstacleDetector
 from road_judge import RoadJudge
 
 PRESCAN_LAUNCH = "/root/dev_ws/appli/framework/launch/prescan.launch.py"
-SCAN_WAIT_SEC = 8.0  # 等一帧 ball 检测的最大等待时间
+SCAN_WAIT_SEC = 8.0  # 等一帧 block 检测的最大等待时间
 
 
 class MissionDispatcher:
@@ -55,6 +55,21 @@ class MissionDispatcher:
         self.map_model = map_model or MapModel()
         self._buf = bytearray()
         self.start_id = None       # 最近一次收到的启停位置 ID（0~24）
+        # 视觉组件与预扫描子进程状态（2026-09-25 补齐）：
+        # 此前 scan_angle() 引用了 self.obstacle_detector / self.road_judge /
+        # self._launch_proc / self._rclpy_init，但 __init__ 从未定义它们 ——
+        # 一旦进入 scan_angle 就抛 AttributeError。
+        self.obstacle_detector = None
+        self.road_judge = None
+        self._launch_proc = None
+        self._rclpy_init = False
+
+    def _ensure_vision(self):
+        """延迟构造视觉组件（缺文件时整个 dispatcher 仍可构造，只在真正扫描时报错）。"""
+        if self.obstacle_detector is None:
+            self.obstacle_detector = ObstacleDetector()
+        if self.road_judge is None:
+            self.road_judge = RoadJudge()
 
     # ================= 串口（预扫描阶段独占）=================
 
@@ -180,7 +195,7 @@ class MissionDispatcher:
         流程：
           1. subprocess 拉起 framework/launch/prescan.launch.py（起 LRCP AR0234 + dnn_node_example）
           2. 在主进程 rclpy.init + PrescanDnnNode 订阅 /hobot_dnn_detection
-          3. spin 等一帧 ball 检测（最长 SCAN_WAIT_SEC 秒）
+          3. spin 等一帧 block 检测（最长 SCAN_WAIT_SEC 秒）
           4. obstacle_detector.pixel_to_grid → road_judge.judge_from_hits
           5. MapModel.set_obstacles
 
@@ -189,6 +204,7 @@ class MissionDispatcher:
         """
         print(f"[mission] scan_angle({angle}) start_id={self.start_id} "
               f"正在拉起 prescan.launch ...")
+        self._ensure_vision()
         try:
             self._launch_proc = subprocess.Popen(
                 ["ros2", "launch", PRESCAN_LAUNCH],
@@ -205,19 +221,19 @@ class MissionDispatcher:
             while time.time() < deadline:
                 rclpy.spin_once(sub_node, timeout_sec=0.5)
                 if sub_node.done_event.is_set():
-                    detected = sub_node.last_balls
+                    detected = sub_node.last_blocks
                     break
             sub_node.destroy_node()
             if self._rclpy_init:
                 rclpy.shutdown()
                 self._rclpy_init = False
             if not detected:
-                print(f"[mission] scan_angle({angle})：未检测到 ball（可能无障碍或模型未命中）")
+                print(f"[mission] scan_angle({angle})：未检测到 block（可能无障碍或模型未命中）")
                 return True  # 无障碍按协议仍 ack
             hits = {}
             for (cx_px, cy_px, conf) in detected:
                 r, c = self.obstacle_detector.pixel_to_grid(cx_px, cy_px)
-                gid = _grid_id(r, c)
+                gid = grid_id(r, c)
                 if gid is not None:
                     hits[gid] = max(hits.get(gid, 0.0), conf)
             obstacles = self.road_judge.judge_from_hits(hits)

@@ -68,16 +68,24 @@ appli/
 | 帧 | 字节流 | 说明 |
 |---|---|---|
 | 二维码 | `FF 37 <UTF-8内容> FE` | 有效码连发 4 次 |
-| 检测目标 | `FF CLASS XL XH YL YH FE` | 坐标低 8 位在前；图像系 960×544 |
+| 检测目标 | `FF CLASS XL XH YL YH FE` | 坐标低 8 位在前；图像系 **640×480**（检测链路实际分辨率，2026-09-25 修正） |
 
 CLASS 映射（v11 9 类新模型，`obj_serial.py` 已实现）：
 `red1=0x41 · black1=0x42 · green1=0x43 · yellow1=0x44 · blue1=0x45 · blue2=0x46`（圆台物块，每帧只发离参考点最近 1 个）·
 `targetOne=0x51 · targetTwo=0x52 · targetThree=0x53`（放置区标识，全部发送）。
 旧模型（250720_v5s）兼容保留：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 · rof=0x34 红目标 · gof=0x35 绿目标 · bof=0x36 蓝目标`
 
-行为规则：默认 mode=2（二维码+检测都发）→ 扫到有效码切 mode=1；只发离画面中心最近的
-目标，且满足区域过滤（x∈[140,500]、y<420，圆环不受限）；无二维码时每 50 帧发心跳
-`0000000`。调试可 `ros2 topic echo /serial_send`。
+行为规则：默认 mode=2（二维码+检测都发）→ 扫到有效码切 mode=1；只发**离参考点最近**
+的物块（1 个/帧）且满足区域过滤；**放置区标识不受过滤、全部发送**；无二维码时每 50 帧
+发心跳 `0000000`。调试可 `ros2 topic echo /serial_send`。
+
+> **2026-09-25 修正**：区域过滤此前**只存在于文档、代码并未实现**（`obj_serial.py` 中
+> `self.xin=180 / self.yin=420` 定义了却从未被引用）。现已补实现并**参数化**：
+> `enable_roi_filter` / `roi_x_min` / `roi_x_max` / `roi_y_max`，参考点
+> `ref_pt_x` / `ref_pt_y`（默认画面中心 320,240）。
+> 默认阈值按实测画面（物块位于 x∈[506,639]）外扩为 `x∈[380,640]、y≤480`。
+> **现场需复核标定** —— 旧文档的 960×544 规格（x∈[140,500]）与当前 640×480 相机
+> 视野完全错开，直接套用会把目标全部滤除（已实测）。
 
 ## 5. 相机分配（2026-09-23 三路相机固化，by-id 路径 + 物理接口固定；2026-09-23 二次修正对调）
 
@@ -99,17 +107,25 @@ CLASS 映射（v11 9 类新模型，`obj_serial.py` 已实现）：
 > 全局扫描位。已对调 `obj_detect_v11.launch.py` / `prescan.launch.py` /
 > `framework/map_scanner.py` 三处 by-id。
 
-> **⚠️ DCXIN 固件设计问题（2026-09-23 实测）**：DCXIN 出厂默认 `auto_exposure=1 (Manual Mode)` +
-> `brightness=50` + `exposure_time_absolute=78` —— **Linux uvcvideo 驱动下默认输出全黑**
-> （亮度 28.6/255）。需要每次上电/USB 复位后**手动执行**：
+> **⚠️ DCXIN 亮度问题（2026-09-25 重新定位，修正此前记录）**
+>
+> 该机固件 `auto_exposure` **只接受 1(Manual) / 3(Aperture Priority)**，**没有真正的
+> Auto(0)**（实测设 0 报 `Invalid argument`）。而出厂默认的 3（光圈优先）在 UVC 摄像头上
+> 是**空转**的 —— 没有可变光圈可调、`exposure_time_absolute` 被标记 `flags=inactive`（只读），
+> 所以这个"自动曝光"从未真正工作，画面亮度实际只由 `brightness` / `gain` 决定。
+> 出厂值 `brightness=50 / gain=0` 明显偏暗（实测画面均值 **68.6**，中央区仅 28.8）。
+>
+> **关键：必须通过 `hobot_usb_cam` 节点参数设置**，而非 launch 之前的 v4l2-ctl 预设 ——
+> 节点启动时会写入自己的 `brightness` 默认值 (50)，会覆盖预设（已实测被覆盖）。
+> 正确做法见 `framework/launch/prescan.launch.py`：
+> ```python
+> {"brightness": 128}, {"gain": 48},
 > ```
-> v4l2-ctl -d /dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0 \
->   --set-ctrl=auto_exposure=3 --set-ctrl=brightness=128 \
->   --set-ctrl=exposure_time_absolute=156 --set-ctrl=gain=0
-> ```
-> **修复后亮度 158.4/255（正常）**。另外 dmesg 报 `Failed to query UVC control 5/7/17` 警告
-> （-32 EPIPE），是 vendor 固件的控制查询失败，**Linux uvcvideo 安全忽略导致默认参数错误**。
-> 下次 DCXIN 不出图 → 先 v4l2-ctl --get-ctrl=auto_exposure 看是不是 1。
+> 修正后画面均值 **138.9**（提升约 2 倍）。非 ROS 场景可手动执行
+> `bash framework/setup_dcxin.sh`（写入同样的值）。
+>
+> 另外 dmesg 报 `Failed to query UVC control 5/7/17`（-32 EPIPE）是 vendor 固件的控制
+> 查询失败、被 uvcvideo 安全忽略，属正常现象，与亮度问题无关。
 
 v11 链路 `obj_detect_v11.launch.py` 的 `cap_qrc_devnode` / `cap_objdet_devnode` 默认按上表
 写死；`framework/map_scanner.py` 默认设备同上。原 `obj_detect.launch.py` 的 `find_camera()`
@@ -138,7 +154,7 @@ NV12 输入；当下用 `cap_objdet=/dev/video0`（KS1A293）做单相机冒烟�
 随后下位机**分三次发 `[shot]`**（云台 0°/45°/90° 各转到位后触发一次，发一次拍一次；
 **0° 基线方向由启停位置决定**（已确认 2026-09-08：从 4 出发 0° 沿右列向下
 `4→9→14→19→24`；从 24 出发 0° 向左沿底行 `24→23→22→21→20`；0~90° 顺时针）→
-视觉每次回 `[ack]`（障碍识别 `obstacle_detector` 待实现）→ 三次完成后判定
+视觉每次回 `[ack]`（障碍识别 `obstacle_detector` + `road_judge` 已实现）→ 三次完成后判定
 （误差圈就近命中 13 候选点 `road_judge` → `MapModel` 记录障碍）→ 下发地图帧
 `[<count> <障碍ID>... <校验>]`（如 `[2 1 3 00]`，仅一次）→ 再进入原任务。
 详见 `framework/DESIGN.md`（部分章节已过时，以本 README 为准）。
@@ -165,15 +181,15 @@ is_start_frame）+ `framework/mission_dispatcher.py`
 视觉环节保留 `scan_angle` 钩子）。无下位机联调：
 `cd framework && python3 /tmp/test_comm.py`（os.openpty 虚拟串口对，`[4]`→ack→3×shot→3×ack→`[2 1 3 00]` 闭环）。
 
-### 6.2 framework/ 新增节点状态（2026-09-23 更新）
+### 6.2 framework/ 新增节点状态（2026-09-25 更新）
 
 | 文件 | 状态 | 说明 |
 |---|---|---|
 | `map_model.py` | ✅ 完成 | 5×5 通行矩阵 + 13 候选点 / 8 固定节点 |
-| `road_judge.py` | ⚠️ 部分 | `nearest_candidate` 已实现；`judge()` 误差圈判定待实现 |
+| `road_judge.py` | ✅ 可用 | `nearest_candidate` / `judge()`（误差圈）+ `judge_from_hits()`（置信度过滤）均已实现。2026-09-25 修：`__init__` 原先直接 `raise NotImplementedError` 导致类**无法实例化**；并把混用的 `hit_threshold` 拆为 `hit_threshold`（网格距离，1.5）与 `conf_threshold`（置信度，0.5） |
 | `serial_protocol.py` | ✅ 完成 | 文本协议编码/解码（shot / ack / 25 位地图） |
-| `mission_dispatcher.py` | ✅ 通信完成 | `run_prescan` 时序 + 串口读写；`scan_angle` 视觉钩子待接 |
-| `obstacle_detector.py` | 🟡 模型已就位 | 加载 `framework/dnn/yolo11_x5_obstacle.bin`（1 类 `ball`，md5 6fd337ab…） + `task_obj_obstacle.json`（yolov8 parser, 640×640 NV12）；`detect()` / `pixel_to_map()` 占位（推理由 `dnn_node_example` 完成，话题 `/hobot_dnn_detection`）|
+| `mission_dispatcher.py` | ✅ 可用 | `run_prescan` 时序 + 串口读写 + `scan_angle` 视觉钩子已接通。2026-09-25 修：`__init__` 补齐 `obstacle_detector` / `road_judge` / `_launch_proc` / `_rclpy_init`（此前一进 `scan_angle` 就 AttributeError）；`_grid_id` → `grid_id` |
+| `obstacle_detector.py` | ✅ 可用 | 模型已换为 `zaw.bin`（1 类 **`block`**、md5 `90f15717…`、box 输出 NHWC）；`detect_from_perception()` 解析 `/hobot_dnn_detection` 的 `PerceptionTargets`。2026-09-25 修：错误的 `from map_model import grid_id`（实际定义在 `serial_protocol.py`）导致本模块 **import 即 ImportError**；`pixel_to_grid()` 仍需现场单应性标定 |
 | `camera_pan.py` | ⏸ 不实现 | 云台控制归下位机 |
 | `path_planner.py` | ⏸ 不实现 | 路径规划归下位机 |
 | `DESIGN.md` | ⚠️ 部分过时 | 协议/状态以本 README 与 `serial_protocol.py` 为准 |

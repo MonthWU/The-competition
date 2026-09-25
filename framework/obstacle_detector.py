@@ -7,7 +7,11 @@
 # 2026-09-23 全局扫描阶段使用的 yolo 模型（1 类 ball，md5 6fd337ab…）
 import os
 
-from map_model import OBSTACLE_CANDIDATES_13, grid_id as _grid_id
+# 2026-09-25 修正：原写法 `from map_model import OBSTACLE_CANDIDATES_13, grid_id as _grid_id`
+# 是错误的 —— grid_id 定义在 serial_protocol.py（map_model 中并无该名字），
+# 会导致本模块 import 阶段直接 ImportError，framework 整条链路连启动都进不去。
+# 且 _grid_id 在本文件中从未被使用，故一并移除。
+from map_model import OBSTACLE_CANDIDATES_13
 
 _DEFAULT_TASK_JSON = "/root/dev_ws/appli/framework/dnn/task_obj_obstacle.json"
 _DEFAULT_MODEL_BIN = "/root/dev_ws/appli/framework/dnn/yolo11_x5_obstacle.bin"
@@ -42,15 +46,15 @@ class ObstacleDetector:
         返回 [(cx_px, cy_px, conf), ...] 像素坐标（640×640）。
         不做单应性变换，由调用方（scan_angle）决定是否映射到网格。
         """
-        balls = []
+        blocks = []
         for t in perception.targets:
             if t.type == "block":
                 roi = t.rois[0].rect
                 cx = roi.x_offset + roi.width // 2
                 cy = roi.y_offset + roi.height // 2
                 conf = float(t.rois[0].confidence)
-                balls.append((cx, cy, conf))
-        return balls
+                blocks.append((cx, cy, conf))
+        return blocks
 
     def pixel_to_grid(self, cx_px: float, cy_px: float) -> tuple:
         """像素 → 网格坐标 (r, c)。

@@ -26,7 +26,7 @@ class PrescanDnnNode(Node):
 
     def __init__(self, name="prescan_dnn"):
         super().__init__(name)
-        self.last_balls = []  # [(cx_px, cy_px, conf), ...] 最近一帧 ball 检测
+        self.last_blocks = []  # [(cx_px, cy_px, conf), ...] 最近一帧 block 检测
         self.frame_seen = 0
         self.done_event = threading.Event()
         self._sub = self.create_subscription(
@@ -34,20 +34,20 @@ class PrescanDnnNode(Node):
         )
 
     def _cb(self, msg: PerceptionTargets):
-        balls = []
+        blocks = []
         for t in msg.targets:
             if t.type == "block":
                 roi = t.rois[0].rect
                 cx = roi.x_offset + roi.width // 2
                 cy = roi.y_offset + roi.height // 2
                 conf = t.rois[0].confidence
-                balls.append((cx, cy, float(conf)))
-        self.last_balls = balls
+                blocks.append((cx, cy, float(conf)))
+        self.last_blocks = blocks
         self.frame_seen += 1
         self.done_event.set()
 
     def reset(self):
-        self.last_balls = []
+        self.last_blocks = []
         self.frame_seen = 0
         self.done_event.clear()
 

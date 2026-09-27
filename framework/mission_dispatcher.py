@@ -12,6 +12,7 @@
 """
 
 import serial
+import os
 
 from serial_protocol import (
     SERIAL_DEV,
@@ -37,6 +38,8 @@ from road_judge import RoadJudge
 
 PRESCAN_LAUNCH = "/root/dev_ws/appli/framework/launch/prescan.launch.py"
 SCAN_WAIT_SEC = 8.0  # 等一帧 block 检测的最大等待时间
+# 2026-09-27：每次收到下位机 [shot] 时，把当时相机画面留档到此目录（供后期检查）
+SCAN_IMG_DIR = "/root/dev_ws/appli/_tmp_scan_imgs"
 
 
 class MissionDispatcher:
@@ -199,6 +202,9 @@ class MissionDispatcher:
           4. obstacle_detector.pixel_to_grid → road_judge.judge_from_hits
           5. MapModel.set_obstacles
 
+        留档（2026-09-27 新增）：无论本次是否检出障碍，都会把该角度的相机画面
+        存到 SCAN_IMG_DIR（scan_<角度>_<时间戳>.jpg），供后期人工检查。
+
         注：单应性矩阵未标定 → pixel_to_grid 返回占位 (2,2)；
         实测闭环需先现场标定 calibrate(image_points, map_points)。
         """
@@ -223,6 +229,16 @@ class MissionDispatcher:
                 if sub_node.done_event.is_set():
                     detected = sub_node.last_blocks
                     break
+
+            # ===== 留档该角度画面（无论是否检出，供后期检查）=====
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            img_path = os.path.join(
+                SCAN_IMG_DIR, "scan_%03d_%s.jpg" % (int(angle), ts))
+            if sub_node.save_last_image(img_path):
+                print(f"[mission] 角度 {angle}° 画面已留档: {img_path}")
+            else:
+                print(f"[mission] 角度 {angle}° 画面留档失败（未收到 /image）")
+
             sub_node.destroy_node()
             if self._rclpy_init:
                 rclpy.shutdown()

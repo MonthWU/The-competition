@@ -6,6 +6,9 @@ log/
 
 config/
 
+# 运行时产物（不入版本管理）
+_tmp_scan_imgs/
+
 recoverme.sh
 
 _tmp_videos/

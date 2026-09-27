@@ -42,8 +42,12 @@
 
 ### 🟢 P2 · 环境/杂项
 
-- [ ] `origin` 指向 `http://127.0.0.1:3000/neolux/GongzongAppli.git`（本机端口转发），
-      3000 未启动时 `git push` 不可用 → 需确认正确远程地址（当前 `ahead 29`）
+- [x] **远程仓库已就绪**（2026-09-27）：新增 remote **`gh`** →
+      `https://github.com/MonthWU/The-competition.git`，项目已推送到分支 **`26GongChuan_vision`**
+      （快进推送 `b7afb2b..1c43833`，未用 force；远程 108 个文件）
+      · 日常推送：`git push gh 26GongChuan_vision`（需 GitHub PAT 认证，**不是账号密码**）
+      · 旧 `origin`（`127.0.0.1:3000` 端口转发）保留未动，已不再使用
+      · 合并时并入了远程原有的 `LICENSE` + `webapp/`（opencv_web_tuner 光照/阈值调参工具）
 
 ---
 

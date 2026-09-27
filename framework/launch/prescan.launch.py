@@ -18,11 +18,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 # 全局扫描相机 by-id（2026-09-23 用户最终确认后二次修正）：
 #   实际接线映射：检测 = LRCP AR0234（拍物块区），全局扫描 = DCXIN（车顶）
 SCAN_VIDEO_DEVICE = "/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0"
-SCAN_WIDTH = 640
-# 2026-09-25：原值 640x640 在 DCXIN 上**不受支持**（该相机 MJPG 仅提供
-# 640x360 / 1280x720 / 1920x1080），会导致起相机失败。改为 640x360。
-# 模型输入仍是 640x640，由 dnn_node_example 内部自动 resize（已验证尺寸不匹配无影响）。
-SCAN_HEIGHT = 360
+SCAN_WIDTH = 1280
+# 2026-09-27 修正（关键）：
+#   640x640  → DCXIN 不支持（该相机 MJPG 仅 640x360 / 1280x720 / 1920x1080）
+#   640x360  → 虽然相机支持，但会让 dnn **段错误**：640x360 → 640x640 是纵向
+#              放大 1.78x，触发 hobot_cv VPS 问题（实测第一帧后 SIGSEGV）
+#   1280x720 → 缩小到 640x640，实测稳定不崩 ✅ ← 采用
+SCAN_HEIGHT = 720
 SCAN_FPS = 30
 DNN_TASK_JSON = "/root/dev_ws/appli/framework/dnn/task_obj_obstacle.json"
 SETUP_SH = "/root/dev_ws/appli/framework/setup_dcxin.sh"   # 非 ROS 场景的手动备用工具

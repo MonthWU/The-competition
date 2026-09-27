@@ -97,8 +97,13 @@
 
 ### 2.3 🟡 功能缺口
 
-- [ ] **单应性标定**：`obstacle_detector.pixel_to_grid()` 未标定时返回占位 (2,2)，
-      需现场标定 `calibrate()`（计划：写标定脚本，现场点 4 个已知网格点自动求单应矩阵）
+- [x] **单应性标定工具**（2026-09-27 完成）：新增 `framework/calibrate_homography.py`
+      （`capture` 抓帧叠网格 / `solve` 求 H / `verify` 验证 / `status` 查状态），
+      并修复 `obstacle_detector.py` 两处使标定链路此前**根本走不通**的问题：
+      ① `pixel_to_grid()` 函数内只 import numpy 却调用 cv2 → 标定后一用就 `NameError`
+      ② `homography_path` 默认空串 → 标定文件永不被加载，`pixel_to_grid` 恒返回占位 (2,2)
+      ⏳ **待现场数据**：现场采 4~8 组「网格坐标 ↔ 像素坐标」后执行
+      `python3 calibrate_homography.py solve "row,col:x,y" ...` 即完成标定
 - [x] **`map_scanner.py` 是死代码** → **已删除**（2026-09-27；无引用、方法全未实现）
 - [x] **端到端联调**（2026-09-27 完成）：`os.openpty` 虚拟串口对 + mock `scan_angle`，
       协议闭环验证通过 —— `[4] → ack → 3×[shot] → 3×ack → 地图帧 [0 00]`

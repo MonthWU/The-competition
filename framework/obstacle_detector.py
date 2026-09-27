@@ -16,10 +16,13 @@ from map_model import OBSTACLE_CANDIDATES_13
 _DEFAULT_TASK_JSON = "/root/dev_ws/appli/framework/dnn/task_obj_obstacle.json"
 _DEFAULT_MODEL_BIN = "/root/dev_ws/appli/framework/dnn/yolo11_x5_obstacle.bin"
 _DEFAULT_CLASSES = "/root/dev_ws/appli/framework/dnn/classes_obstacle.names"
+# 单应性标定结果存盘路径（由 calibrate_homography.py 生成）
+_DEFAULT_HOMOGRAPHY = "/root/dev_ws/appli/framework/dnn/obstacle_homography.npy"
 
 
 class ObstacleDetector:
-    def __init__(self, model_path="", homography_path="", task_json=_DEFAULT_TASK_JSON):
+    def __init__(self, model_path="", homography_path=_DEFAULT_HOMOGRAPHY,
+                 task_json=_DEFAULT_TASK_JSON):
         """加载 yolov11 全局扫描模型（1 类 ball）。
 
         通过 dnn_node_example 体系跑：此节点只负责输入图像 + 解析 PerceptionTargets，
@@ -34,7 +37,9 @@ class ObstacleDetector:
         for p in (self.model_path, self.task_json, self.classes_path):
             if not os.path.exists(p):
                 raise FileNotFoundError(f"obstacle_detector: missing {p}")
-        # 单应性矩阵（3×3），默认 None（未标定）
+        # 单应性矩阵（3×3），未标定/文件不存在时为 None
+        # 2026-09-27 修：homography_path 原默认空串 → 即使标定文件存在也不会加载，
+        # pixel_to_grid() 永远返回占位 (2,2)。现默认指向 _DEFAULT_HOMOGRAPHY。
         self._H = None
         if homography_path and os.path.exists(homography_path):
             import numpy as np
@@ -59,12 +64,14 @@ class ObstacleDetector:
     def pixel_to_grid(self, cx_px: float, cy_px: float) -> tuple:
         """像素 → 网格坐标 (r, c)。
 
-        TODO: 需要单应性矩阵 self._H；未标定时返回占位 (0, 0)。
+        需要单应性矩阵 self._H（由 calibrate() 或 calibrate_homography.py 生成）；
+        未标定时返回占位 (2, 2)（画面中心），调用方需判断并 log warning。
         """
         if self._H is None:
             # 占位：未标定返回中心 (2,2)，调用方需判断并 log warning
             return (2, 2)
         import numpy as np
+        import cv2      # 2026-09-27 修：原函数内只 import numpy，用到 cv2 时 NameError
         pt = np.array([[[cx_px, cy_px]]], dtype=np.float64)
         warped = cv2.perspectiveTransform(pt, self._H)[0][0]
         # warped 是 5×5 网格内的实数坐标；找最近的候选点

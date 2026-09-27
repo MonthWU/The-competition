@@ -1,5 +1,7 @@
 # appli —— RDK X5 智能搬运视觉系统
 
+> 本仓库为 **The-competition**（TI 比赛相关内容）的 **26GongChuan_vision** 分支。
+
 基于 ROS2 Humble 的智能搬运机器人视觉子系统，运行于地瓜 RDK X5（`/root/dev_ws/appli`），
 配套 2027 浙江省工创大赛智能搬运赛项。双 USB 相机分时复用：**二维码扫描 + 目标检测（YOLOv5s）**，
 检测结果经串口（`ttyS1@115200`）下发下位机执行。

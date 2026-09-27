@@ -33,6 +33,7 @@ H 由本工具离线标定生成，默认存到：
      python3 calibrate_homography.py status
 """
 import os
+import subprocess
 import sys
 
 import cv2
@@ -41,6 +42,21 @@ import numpy as np
 H_PATH = "/root/dev_ws/appli/framework/dnn/obstacle_homography.npy"
 DEV = "/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0"
 CAP_W, CAP_H = 1280, 720          # 与 prescan.launch.py 的 SCAN_WIDTH/HEIGHT 保持一致
+
+
+def _apply_dcxin_brightness(dev):
+    """采图前修正 DCXIN 亮度/增益。
+
+    背景：该机固件无真正的 Auto 曝光（只支持 1/3），且 3（光圈优先）在 UVC 上
+    空转，画面亮度实际只由 brightness/gain 决定；出厂 50/0 明显偏暗
+    （实测均值 68.6）。此处与 prescan.launch.py 的节点参数取一致值。
+    """
+    for ctrl, val in (("auto_exposure", 3), ("brightness", 128), ("gain", 48)):
+        try:
+            subprocess.run(["v4l2-ctl", "-d", dev, "--set-ctrl=%s=%s" % (ctrl, val)],
+                           timeout=5, capture_output=True)
+        except Exception:
+            pass
 
 
 def _parse_pairs(argv):
@@ -60,6 +76,7 @@ def _parse_pairs(argv):
 
 
 def cmd_capture(out="/tmp/calib_frame.jpg"):
+    _apply_dcxin_brightness(DEV)      # 采图前先提亮（否则画面偏暗）
     cap = cv2.VideoCapture(DEV)
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAP_W)
@@ -87,7 +104,10 @@ def cmd_capture(out="/tmp/calib_frame.jpg"):
     cv2.putText(frame, "grid=%dpx  size=%dx%d" % (step, w, h), (w - 300, h - 12),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 140, 255), 1)
     cv2.imwrite(out, frame)
-    print("已保存: %s（%dx%d，网格 %d px）" % (out, w, h, step))
+    gray_mean = float(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).mean())
+    print("已保存: %s（%dx%d，网格 %d px，亮度均值 %.1f）" % (out, w, h, step, gray_mean))
+    if gray_mean < 40:
+        print("⚠️ 画面偏暗（均值 %.1f）—— 若明显发黑，检查 DCXIN 是否被其它程序占用" % gray_mean)
     return 0
 
 

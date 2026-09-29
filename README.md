@@ -1,3 +1,5 @@
+> ④ `run_all.launch.py` `os.environ.get("DNN_ENGINE", "workaround")` 改 "native"
+
 # appli —— RDK X5 智能搬运视觉系统
 
 > 本仓库为 **The-competition**（TI 比赛相关内容）的 **26GongChuan_vision** 分支。
@@ -21,6 +23,10 @@ ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
 ```
 
 启动链路：`appli.service` → `/usr/local/bin/appli.sh` → `ros2 launch launch/run_all.launch.py`
+> ④ `run_all.launch.py` `os.environ.get("DNN_ENGINE", "workaround")` 改 "native"
+
+# appli —— RDK X5 智能搬运视觉系统
+
 
 ## 2. 系统架构（两阶段任务流）
 
@@ -45,6 +51,12 @@ launch/run_all.launch.py
 
 关键话题：`/qrc_image` · `/qrc_result` · `/kill_qrc` · `/image` · `/hbmem_img` ·
 `/hobot_dnn_detection`（PerceptionTargets）· `/serial_send`
+> **物块识别双链路（2026-09-29 落地）**：
+> - **workaround（默认）**：`dnn/yolo11_x5.bin`（md5 `d2ec3e70…`，NCHW）+ `obj_dnn.py` 自写解码绕开 TROS parser_yolov8 的 NHWC 假设（首帧 SIGSEGV）。
+> - **native**：`dnn/yolo11_x5_nhwc.bin`（md5 `d31741bb…`，NHWC）+ TROS `dnn_node_example` 直接吃 `dnn/task_obj_v11_nhwc.json`。
+> - 切换：`export DNN_ENGINE=native && ros2 launch launch/run_all.launch.py`，或一次性 `ros2 launch ... dnn_engine:=native`。
+> - 两链路**对外接口完全一致**（同一 topic `/hobot_dnn_detection`，同一 launch 参数集），下游 `obj_serial` / websocket / 录像无需任何改动；删其中一条不影响其他文件。
+
 
 ## 3. 目录结构
 
@@ -55,6 +67,7 @@ appli/
 ├── qrc_skandier/                # 二维码包（qrc_cam / qrc_scanner / qrc_cam_killer / flaskr）
 ├── qrc_hobot_usb_cam/           # USB 相机 ROS2 包装（C++）
 ├── dnn/                         # 模型资产：原任务 yolov5s_v5s_672 + yolov11 9 类物块/标识（task_obj_v11.json）
+│                                # 物块双链路：yolo11_x5.bin（NCHW/workaround）+ yolo11_x5_nhwc.bin（NHWC/native）+ task_obj_v11{,_nhwc}.json
 ├── framework/dnn/               # 【新增】全局扫描 1 类 ball yolo + task_obj_obstacle.json
 ├── service/                     # appli.service + appli.sh（自启链路）
 ├── gpio_shutdown/               # GPIO 关机键服务
@@ -202,14 +215,79 @@ is_start_frame）+ `framework/mission_dispatcher.py`
 
 | 资产 | 路径 | 用途 |
 |---|---|---|
-| 物块/标识 9 类模型 | `dnn/yolo11_x5.bin` + `dnn/classes.names` + `dnn/task_obj_v11.json` | 原任务检测（圆台物块 6 色 + 放置区标识 3 种）|
-| 障碍 1 类模型 | `framework/dnn/yolo11_x5_obstacle.bin` + `framework/dnn/classes_obstacle.names` + `framework/dnn/task_obj_obstacle.json` | 全局扫描开局 3 帧识别障碍（**仅 1 类 `ball`**，md5 6fd337ab…与物块模型不同）|
+| 物块/标识 9 类模型（NCHW · 现役） | `dnn/yolo11_x5.bin`（md5 `d2ec3e70…`，NCHW，3.19 MB）+ `dnn/classes.names` + `dnn/task_obj_v11.json` | 原任务检测（圆台物块 6 色 + 放置区标识 3 种），需 `obj_dnn.py` 绕行层（`dnn_engine:=workaround`，默认） |
+| 物块/标识 9 类模型（NHWC · 新版） | `dnn/yolo11_x5_nhwc.bin`（md5 `d31741bb…`，NHWC，10.34 MB）+ `dnn/task_obj_v11_nhwc.json` | 同 9 类，但导出时已 layout 转置，TROS `dnn_node_example` 直吃（`dnn_engine:=native`，无需 `obj_dnn.py`） |
+| 障碍 1 类模型 | `framework/dnn/yolo11_x5_obstacle.bin`（md5 `4b36aed6…`，NCHW cls + NHWC box） + `framework/dnn/classes_obstacle.names` + `framework/dnn/task_obj_obstacle.json` | 全局扫描开局 3 帧识别障碍（**仅 1 类 `block`**，需 `obs_dnn.py` 绕 `dnn_node_example` 段错误） |
 
 两个模型的 `.bin` 内部模型名都是 `yolo11_detect_bayese_640x640_nv12`，但量化参数不同（前者
 9 类 65KB 更大），**不可互相替代**。
+**三个 `.bin` 的 `properties.layout` 都不一定与实际内存一致**——`obs_dnn.py` 与 `obj_dnn.py` 已用「**实测 shape** 而不是 layout 字段」做解码适配；TROS `dnn_node_example` 只信任 layout 字段，所以 native 链仅在「layout 标签对」时能跑通，否则需要绕行层。
+
+物块任务推荐先试 `dnn/yolo11_x5_nhwc.bin`（native 链）——TROS 自带 `dnn_node_example` 能直吃，无须额外节点；现场先跑通 native，确认精度后再决定是否下线 workaround。
+
 
 半成品：**13 候选点照片区间标定**——0°/45° 照片人工框选斜四边形 ROI（标注器 skill
 `map-quad-annotator`，板端 :8888 页面）。当前 0° 已框 6 个（待补 label 与剩余），45° 未框。
+
+
+## 7. 物块双链路切换 & 单删指南（2026-09-29）
+
+`obj_detect_v11.launch.py` 内置两套可替换的推理实现，通过 `dnn_engine` 启动参数切换：
+
+| `dnn_engine` | 模型 | 推理节点 | 默认状态 |
+|---|---|---|---|
+| `workaround` | `dnn/yolo11_x5.bin`（NCHW，3.19 MB） | `obj_dnn`（自写 pyeasy_dnn + DFL 解码，绕开 TROS 段错误） | **默认** |
+| `native`     | `dnn/yolo11_x5_nhwc.bin`（NHWC，10.34 MB） | `dnn_node_example`（TROS 自带，`task_obj_v11_nhwc.json` 直吃） | 备选（精度待现场回验）|
+
+两条链路**对外接口完全一致**：
+- 同一话题 `/hobot_dnn_detection`（`ai_msgs/msg/PerceptionTargets`）
+- 同一参数集（`cap_objdet` / `dnn_example_image_{width,height}` / `msg_pub_topic_name` / `score_threshold` / `nms_threshold`）
+- 同一图像输入（`/image`），同一图像尺寸（默认 640×480）
+
+因此下游 `obj_serial` / websocket / 录像 **完全不需要改动**；未来要删其中一条，**只动对应的那侧文件**，对另一个文件零影响。
+
+### 7.1 切换用法
+
+```bash
+# 默认（workaround）
+ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
+
+# 切到 native
+ros2 launch /root/dev_ws/appli/launch/run_all.launch.py dnn_engine:=native
+
+# 或 export 环境变量（run_all 读取）
+export DNN_ENGINE=native && ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
+
+# 自定义 task JSON / 模型
+ros2 launch ... dnn_engine:=native dnn_task_json:=/path/to/your.json
+ros2 launch ... dnn_engine:=workaround model_file:=/path/to/your.bin
+```
+
+### 7.2 删除其中一条的步骤（互不影响）
+
+**删 workaround（NCHW + obj_dnn）**：
+1. 删除 `obj_detect/obj_detect/obj_dnn.py`；
+2. 删除 `obj_detect/setup.py` 中 `obj_dnn = obj_detect.obj_dnn:main` 的 `entry_points` 条目；
+3. 在 `obj_detect/launch/obj_detect_v11.launch.py` 中删除 `obj_dnn_node`（包括它的 `workaround_*` 启动参数，模拟条件 `dnn_engine=='workaround'`）；
+4. 把 `launch/run_all.launch.py` 的 `os.environ.get("DNN_ENGINE", "workaround")` 默认改为 `"native"`；
+5. native 链对外接口未变，下游文件零影响。
+
+**删 native（NHWC + dnn_node_example）**：
+1. 删除 `obj_detect/launch/obj_detect_v11.launch.py` 中的 `objdet_nv12_codec_node` / `shared_mem_node` / `dnn_node_example_node`（含 `native_*` 启动参数与 `dnn_engine=='native'` 条件）；
+2. 删除 `dnn/task_obj_v11_nhwc.json` 与 `dnn/yolo11_x5_nhwc.bin`；
+3. workaround 链对外接口未变，下游文件零影响。
+
+### 7.3 验收要点（现场回验 native 链）
+
+1. 启动后 `ros2 topic list | grep hobot_dnn_detection` 看到话题；
+3. `ros2 topic echo /hobot_dnn_detection --once` 能收到 PerceptionTargets（含 `rois`、`type`）；
+3. 物块特写图（LRCP AR0234 拍）下置信度与 workaround 链相当（参考 >0.5）；
+4. `obj_serial` 串口下行正常（`ros2 topic echo /serial_send`）。
+
+如 native 链实景下召回/精度比 workaround 差，回退即可：
+```bash
+ros2 launch /root/dev_ws/appli/launch/run_all.launch.py   # 默认 workaround
+```
 
 ## 8. Git 与回滚
 

@@ -123,3 +123,30 @@ for i,o in enumerate(dnn.load('你的.bin')[0].outputs):
 
 > **DCXIN 亮度**：必须通过 `hobot_usb_cam` **节点参数**设 `brightness=128 / gain=48`
 > （该机无真正的 Auto 曝光；launch 前的 v4l2 预设会被节点覆盖）。
+
+### 物块模型 · NHWC 替代版（2026-09-29 落地）
+- [x] **新增 NHWC 物块模型** `dnn/yolo11_x5_nhwc.bin`（md5 `d31741bb…`，10.34 MB）
+      —— 导出时 cls/box 已转置 NHWC，可被 TROS `dnn_node_example` 直接吃（无需 `obj_dnn` 绕行层）
+- [x] **新建** `dnn/task_obj_v11_nhwc.json`（dnn_Parser=yolov8，reg_max=16，class_num=9）
+- [x] **`obj_detect_v11.launch.py` 增加 `dnn_engine` 启动参数**
+      （`workaround` 默认 / `native`），两条链路 topic / 参数完全对齐
+- [x] **`launch/run_all.launch.py` 通过 `DNN_ENGINE` 环境变量透传**
+- [x] **README §2/§3/§6.3/§7 同步**：双链路表 + 切换用法 + 单删指南（删 workaround 5 步 / 删 native 3 步，互不影响）
+
+#### P0 · 现场回验 native 链
+- [ ] **LRCP AR0234 物块特写图** 实景对比 workaround（md5 `d2ec3e70`）vs native（md5 `d31741bb`）：
+      置信度、召回、定位精度三指标 ≥ 现役（参考 baseline：workaround 0.93/0.92/0.95）
+- [ ] 若 native 召回/精度 ≥ workaround → 把 `run_all.launch.py` 的 `DNN_ENGINE` 默认改为 `"native"`，
+      随后择期下线 workaround（删 `obj_dnn.py` + 删 launch 的 workaround 分支 + 删 setup.py entry_points）
+
+#### P1 · native 链可选优化
+- [ ] `dnn_node_example_node` 当前 `arguments=["--ros-args", "--log-level", "warn"]`，
+      现场调通期可改 `info` 或暴露开关便于查 `out box size`
+- [ ] `task_obj_v11_nhwc.json` 默认 `score_threshold=0.4 / nms_threshold=0.5`，
+      现场按工作距离/重叠情况微调
+
+#### 不受影响项
+- 障碍物识别（framework/）链路不动
+- 二维码（qrc_skandier）链路不动
+- 串口协议（`obj_serial`）下游订阅接口不动
+- 相机 by-id 路径 / 拉流分辨率参数不动

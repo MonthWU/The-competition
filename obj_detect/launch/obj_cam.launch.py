@@ -33,7 +33,7 @@ def generate_launch_description():
     )
     usb_framerate = DeclareLaunchArgument(
         "usb_framerate",
-        default_value="120",
+        default_value="90",
         description="usb camera framerate",
     )
 

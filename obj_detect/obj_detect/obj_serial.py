@@ -52,8 +52,10 @@ class ObjSerial(Node):
     def __init__(self, name):
         super().__init__(name)
         self.get_logger().info(f"Init serial port, node {name}")
-        self.ser = Serial(ser_dev, 115200)
-        self.get_logger().info(f"Serial port {ser_dev} init")
+        self.declare_parameter("serial_device", ser_dev)
+        device = self.get_parameter("serial_device").value
+        self.ser = Serial(device, 115200)
+        self.get_logger().info(f"Serial port {device} init")
         self.model_res = self.create_subscription(
             PerceptionTargets, "hobot_dnn_detection", self.det_callback, 10
         )
@@ -71,7 +73,9 @@ class ObjSerial(Node):
         # 现场可用参数覆盖（ros2 param set / launch 参数）重新标定。
         self.declare_parameter("ref_pt_x", 320)            # "最近目标"参考点，默认画面中心
         self.declare_parameter("ref_pt_y", 240)
-        self.declare_parameter("enable_roi_filter", True)  # 物块区域过滤开关
+        # 历史样本里真实红/浅蓝物块出现在 x=250/348，而旧默认 x>=380 会
+        # 滤掉它们并留下机械结构误检。现场重新标定 ROI 前默认关闭过滤。
+        self.declare_parameter("enable_roi_filter", False)  # 现场标定后可开启
         # 默认值已按 2026-09-25 实测画面修正：现场 4 个物块的实际图像坐标为
         #   yellow1 (614,438) / black1 (520,406) / black1 (557,397) / red1 (621,184)
         # 即集中在画面右侧 x∈[506,639]、y∈[160,476]。若沿用 README 旧规格（960x544）
@@ -80,6 +84,7 @@ class ObjSerial(Node):
         self.declare_parameter("roi_x_min", 380)
         self.declare_parameter("roi_x_max", 640)
         self.declare_parameter("roi_y_max", 480)
+        self.declare_parameter("qr_only", False)
 
         self.ref_pt = (
             float(self.get_parameter("ref_pt_x").value),
@@ -93,7 +98,9 @@ class ObjSerial(Node):
             f"ref_pt={self.ref_pt}, roi_filter={self.enable_roi} "
             f"x∈[{self.roi_x_min},{self.roi_x_max}] y<={self.roi_y_max}"
         )
-        self.mode = 2  # 0: send qrcode info; 1: send obj det results; 2: send both
+        self.qr_only = bool(self.get_parameter("qr_only").value)
+        self._done = False
+        self.mode = 0 if self.qr_only else 2  # 0: QR only; 1: objects; 2: both
         # self.call_opened() # no send a startup signal. Send all even empty qrcode data
         self.cnt = 0
 
@@ -120,6 +127,8 @@ class ObjSerial(Node):
                 self.send_qrc(msg.data)
                 self.send_qrc(msg.data)
                 self.mode = 1  # valid adata scanned to set flag to 1
+                if self.qr_only:
+                    self._done = True
 
     def det_callback(self, msg):
         # self.get_logger().info("Det recvd!")
@@ -217,5 +226,13 @@ class ObjSerial(Node):
 def main(args=None):
     rclpy.init(args=args)
     serial_node = ObjSerial("obj_serial")
-    rclpy.spin(serial_node)
-    rclpy.shutdown()
+    try:
+        while rclpy.ok() and not serial_node._done:
+            rclpy.spin_once(serial_node, timeout_sec=0.2)
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+        pass
+    finally:
+        serial_node.ser.close()
+        serial_node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()

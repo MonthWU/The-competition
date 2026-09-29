@@ -40,6 +40,14 @@ class QrcCam(Node):
     def __init__(self, name):
         super().__init__(name)
 
+        # Subscribe before opening the USB camera. Camera setup can take longer
+        # than QR decoding from an already-running publisher; otherwise the
+        # one-shot kill message can arrive before this subscription exists.
+        self._done = False
+        self.shutdown_sub = self.create_subscription(
+            String, "kill_qrc", self.shutdown, 10
+        )
+
         self.declare_parameter("cam_idx", "/dev/video0")
         self.declare_parameter("fps", 240)
         self.declare_parameter("img_width", 640)
@@ -110,14 +118,6 @@ class QrcCam(Node):
 
         self.frame_count = 0
         self.fps_timer = self.create_timer(1, self.fps_callback)
-
-        self._done = False
-        self.shutdown_sub = self.create_subscription(
-            String,
-            "kill_qrc",
-            self.shutdown,
-            10,
-        )
 
     def qrc_image_pub_callback(self):
         _, frame = self.cam.read()

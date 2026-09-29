@@ -1,56 +1,82 @@
 #!/bin/bash
-# =============================================================================
-# start_new.sh —— 完整流程启动（新流程）
-#
-#   阶段 1  障碍物预扫描   ：DCXIN 全局扫描 → 障碍识别 → 下发地图帧给下位机
-#   阶段 2  二维码扫描     ：扫码 → 扫到有效码后杀掉扫码链路
-#   阶段 3  物块识别       ：检测相机接管 → YOLO 物块识别 → 串口下发 + Web 预览
-#
-# 与 start_old.sh 的唯一区别：**多了阶段 1**。
-#
-# 用法:  bash start_new.sh [预扫描超时秒数，默认 30]
-# =============================================================================
+# School vision flow. The profile can stop after QR while the object camera is unavailable.
 
-set -u
-
-HOME=/root
-WS=$HOME/dev_ws/appli
+WS=/root/dev_ws/appli
 PRESCAN_TIMEOUT="${1:-30}"
+PROFILE="${APPLI_SCHOOL_PROFILE:-$WS/framework/school_profile.json}"
+SERIAL_DEVICE="${APPLI_SERIAL_DEVICE:-/dev/ttyS1}"
+
+MODE=$(python3 - "$PROFILE" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    enabled = json.load(stream).get("object_scan_enabled", True)
+if not isinstance(enabled, bool):
+    raise ValueError("object_scan_enabled must be a JSON boolean")
+print("full" if enabled else "qr_only")
+PY
+) || exit 2
+
+preflight() {
+    local missing=0
+    local path
+    for path in \
+        /dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0 \
+        /dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0 \
+        "$SERIAL_DEVICE" \
+        "$WS/framework/dnn/yolo11_x5_obstacle.bin"; do
+        if [ ! -e "$path" ]; then
+            printf '[appli] MISSING_REQUIRED_RESOURCE: %s\n' "$path" >&2
+            missing=1
+        fi
+    done
+    if [ "$MODE" = full ]; then
+        for path in \
+            /dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0 \
+            "$WS/dnn/yolo11_x5.bin"; do
+            if [ ! -e "$path" ]; then
+                printf '[appli] MISSING_REQUIRED_RESOURCE: %s\n' "$path" >&2
+                missing=1
+            fi
+        done
+    fi
+    return "$missing"
+}
+
+if [ "$PRESCAN_TIMEOUT" = --check ]; then
+    preflight
+    exit $?
+fi
+if ! [[ "$PRESCAN_TIMEOUT" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    printf '[appli] INVALID_PRESCAN_TIMEOUT: %s\n' "$PRESCAN_TIMEOUT" >&2
+    exit 2
+fi
+if ! preflight; then
+    exit 2
+fi
 
 export CAM_TYPE=usb
 export ROS_DOMAIN_ID=42
 
-source /opt/tros/humble/setup.bash
-source "$WS/install/setup.bash"
+# The TROS setup script reads unset variables; enable nounset only afterward.
+source /opt/tros/humble/setup.bash || exit 2
+source "$WS/install/setup.bash" || exit 2
+set -u
 
-echo "=============================================================="
-echo " start_new.sh —— 完整流程（障碍物 → 二维码 → 物块）"
-echo " 工作区: $WS    预扫描超时: ${PRESCAN_TIMEOUT}s"
-echo "=============================================================="
-
-# ---------- 阶段 1：障碍物预扫描 ----------
-echo
-echo ">>> [1/2] 障碍物预扫描阶段（DCXIN + 障碍模型）"
-echo ">>> 等待下位机发 [num] 启停位置 → 3 次 [shot] → 地图帧"
-cd "$WS/framework" || exit 1
-python3 prescan_main.py "$PRESCAN_TIMEOUT"
-PRESCAN_RC=$?
-echo ">>> 预扫描退出码: $PRESCAN_RC  （0=成功 / 1=失败）"
-if [ "$PRESCAN_RC" -ne 0 ]; then
-    echo ">>> ⚠️ 预扫描未成功（超时或串口异常）。"
-    echo ">>>    按协议「无障碍也算完成」，此处**仍继续**主任务；"
-    echo ">>>    如需严格模式，请把下面一行改为 exit $PRESCAN_RC"
+printf '[appli] STAGE_1_OBSTACLE_SCAN\n'
+cd "$WS/framework" || exit 2
+python3 prescan_main.py "$PRESCAN_TIMEOUT" "$SERIAL_DEVICE"
+prescan_rc=$?
+if [ "$prescan_rc" -ne 0 ]; then
+    printf '[appli] PRESCAN_FAILED: rc=%s; main task not started\n' "$prescan_rc" >&2
+    exit "$prescan_rc"
 fi
 
-# ---------- 阶段 2 + 3：二维码 + 物块识别 ----------
-echo
-echo ">>> [2/2] 主任务阶段（二维码扫描 → 物块识别）"
-cd "$WS" || exit 1
-ros2 launch "$WS/launch/run_all.launch.py"
-MAIN_RC=$?
-
-echo
-echo "=============================================================="
-echo " 结束：预扫描=$PRESCAN_RC  主任务=$MAIN_RC"
-echo "=============================================================="
-exit "$MAIN_RC"
+cd "$WS" || exit 2
+if [ "$MODE" = qr_only ]; then
+    printf '[appli] STAGE_2_QR_SCAN_ONLY\n'
+    exec ros2 launch "$WS/launch/run_qr_only.launch.py" "serial_device:=$SERIAL_DEVICE"
+fi
+printf '[appli] STAGE_2_QR_SCAN_THEN_OBJECT_SCAN\n'
+exec ros2 launch "$WS/launch/run_all.launch.py"

@@ -80,11 +80,9 @@ CLASSES_FILE        = "/root/dev_ws/appli/dnn/classes.names"
 
 
 def _check_cam(path: str, role: str) -> str:
-    """校验 by-id 路径存在；缺失时大声告警（不回退到猜测模式）。"""
+    """Require the configured camera instead of allowing a silent fallback."""
     if not os.path.exists(path):
-        print(
-            f"[obj_detect_v11] 错误：{role}相机 {path} 不存在！请检查 USB 接线（by-id 路径）。"
-        )
+        raise FileNotFoundError(f"[obj_detect_v11] CAMERA_NOT_FOUND: {role}: {path}")
     return path
 
 
@@ -153,7 +151,7 @@ def generate_launch_description():
             {"usb_video_device": LaunchConfiguration("cap_objdet")},
             {"usb_image_width": LaunchConfiguration("dnn_example_image_width")},
             {"usb_image_height": LaunchConfiguration("dnn_example_image_height")},
-            {"usb_framerate": 120},
+            {"usb_framerate": 90},
             {
                 "launch_file_path": os.path.join(
                     get_package_share_directory("obj_detect"),

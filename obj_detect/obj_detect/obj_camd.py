@@ -25,7 +25,7 @@ class ObjCamd(Node):
             namespace="",
             parameters=[
                 ("usb_video_device", "/dev/video0"),
-                ("usb_framerate", 120),
+                ("usb_framerate", 90),
                 ("usb_image_width", 640),
                 ("usb_image_height", 480),
                 (
@@ -48,6 +48,10 @@ class ObjCamd(Node):
 
     def obj_cam_launch(self):
         """Launch object detection camera"""
+        device = self.get_parameter("usb_video_device").value
+        if not os.path.exists(device):
+            self.get_logger().error(f"CAMERA_NOT_FOUND: {device}")
+            return
         launch_file_path = (
             self.get_parameter("launch_file_path").get_parameter_value().string_value
         )
@@ -58,7 +62,8 @@ class ObjCamd(Node):
                 "ros2",
                 "launch",
                 launch_file_path,
-                f"cap_objdet:={self.get_parameter('usb_video_device').get_parameter_value().string_value}",
+                f"cap_objdet:={device}",
+                f"usb_framerate:={self.get_parameter('usb_framerate').value}",
             ]
         )
 

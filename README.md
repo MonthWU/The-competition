@@ -1,28 +1,33 @@
-> ④ `run_all.launch.py` `os.environ.get("DNN_ENGINE", "workaround")` 改 "native"
-
 # appli —— RDK X5 智能搬运视觉系统
 
 > 本仓库为 **The-competition**（TI 比赛相关内容）的 **26GongChuan_vision** 分支。
 
 基于 ROS2 Humble 的智能搬运机器人视觉子系统，运行于地瓜 RDK X5（`/root/dev_ws/appli`），
-配套 2027 浙江省工创大赛智能搬运赛项。双 USB 相机分时复用：**二维码扫描 + 目标检测（YOLOv5s）**，
-检测结果经串口（`ttyS1@115200`）下发下位机执行。
+配套 2027 浙江省工创大赛智能搬运赛项。校赛入口依次执行**障碍物预扫描、二维码扫描**；
+物块相机修复后，可在 `framework/school_profile.json` 中开启物块扫描。
+检测结果经串口（`ttyS1@115200`）下发下位机执行。校赛配置和验证边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md)。
 
 ## 1. 快速开始
 
 ```bash
-# 开机自启（服务已安装，当前 disabled）
-systemctl enable appli.service      # 启用自启
-systemctl start appli               # 手动启动
+# 按当前校赛配置检查所需相机、串口和模型；服务当前 disabled
+bash /root/dev_ws/appli/start_new.sh --check
+
+# 执行当前链路；先等下位机 [4] 或 [24]，再等三次 [shot]
+bash /root/dev_ws/appli/start_new.sh 30
+
+# 已安装的服务入口与上述脚本一致，确需服务运行时执行
+systemctl start appli.service
 
 # 或直接运行启动脚本（等价）
 bash /usr/local/bin/appli.sh
 
-# 一键启动入口（launch 文件）
+# 仅调试二维码与物块阶段时使用
 ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
 ```
 
-启动链路：`appli.service` → `/usr/local/bin/appli.sh` → `ros2 launch launch/run_all.launch.py`
+启动链路：`appli.service` → `/usr/local/bin/appli.sh` → `start_new.sh` → `prescan_main.py` → `run_qr_only.launch.py`（当前配置）或 `run_all.launch.py`（物块相机恢复后）。
+预扫描失败会退出，不会自动进入二维码阶段。下文保留了历史联调记录；当前校赛状态以 `SCHOOL_RUNBOOK.md` 为准。
 > ④ `run_all.launch.py` `os.environ.get("DNN_ENGINE", "workaround")` 改 "native"
 
 # appli —— RDK X5 智能搬运视觉系统
@@ -91,14 +96,14 @@ CLASS 映射（v11 9 类新模型，`obj_serial.py` 已实现）：
 旧模型（250720_v5s）兼容保留：`rcf=0x31 红圆环 · gcf=0x32 绿圆环 · bcf=0x33 蓝圆环 · rof=0x34 红目标 · gof=0x35 绿目标 · bof=0x36 蓝目标`
 
 行为规则：默认 mode=2（二维码+检测都发）→ 扫到有效码切 mode=1；只发**离参考点最近**
-的物块（1 个/帧）且满足区域过滤；**放置区标识不受过滤、全部发送**；无二维码时每 50 帧
+的物块（1 个/帧）；区域过滤可在现场标定后启用。**放置区标识全部发送**；无二维码时每 50 帧
 发心跳 `0000000`。调试可 `ros2 topic echo /serial_send`。
 
 > **2026-09-25 修正**：区域过滤此前**只存在于文档、代码并未实现**（`obj_serial.py` 中
 > `self.xin=180 / self.yin=420` 定义了却从未被引用）。现已补实现并**参数化**：
 > `enable_roi_filter` / `roi_x_min` / `roi_x_max` / `roi_y_max`，参考点
 > `ref_pt_x` / `ref_pt_y`（默认画面中心 320,240）。
-> 默认阈值按实测画面（物块位于 x∈[506,639]）外扩为 `x∈[380,640]、y≤480`。
+> 历史阈值 `x∈[380,640]、y≤480` 会漏掉另一组实拍画面中的真实物块，校赛默认关闭过滤；现场标定后可重新启用。
 > **现场需复核标定** —— 旧文档的 960×544 规格（x∈[140,500]）与当前 640×480 相机
 > 视野完全错开，直接套用会把目标全部滤除（已实测）。
 

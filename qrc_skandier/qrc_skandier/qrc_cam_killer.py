@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 import time
+from qrc_skandier.task_code import is_valid_task_code
 
 
 class QrcCamKiller(Node):
@@ -22,8 +23,7 @@ class QrcCamKiller(Node):
         注意：不在回调内 destroy_node()（回调内销毁节点会让 rclpy 卡住、进程残留），
         改为置 _done 标志，由 main 的循环统一收尾。
         """
-        if msg.data == "0000000":
-            self.get_logger().info("Received: 0000000, no kills")
+        if not is_valid_task_code(msg.data):
             return
         self.get_logger().info(f"Received: {msg.data}, killing qrc* nodes")
         self.qrc_kill_pub.publish(String(data="kill"))

@@ -1,14 +1,14 @@
 """prescan_dnn_node —— 全局扫描 DNN 订阅节点（2026-09-23，2026-09-27 增补留档）。
 
 订阅 /hobot_dnn_detection（PerceptionTargets），过滤 type=='block' 的目标，
-把 bbox 中心 + 置信度回调给 mission_dispatcher.scan_angle()。
+把 bbox 下部定位点 + 置信度回调给 mission_dispatcher.scan_angle()。
 
 **2026-09-27 新增**：同时订阅 /image（CompressedImage, mjpeg），缓存最近一帧，
 供 mission_dispatcher 在每次收到下位机 [shot] 后**把当时画面留档**（存 jpg），
 用于后期人工检查（无论该次是否检出障碍）。
 
 共享内存输入：/hbmem_img（hobot_usb_cam → hobot_codec_decode 的 NV12 输出）。
-推理走 dnn_node_example（yolov8 parser, task=task_obj_obstacle.json）。
+推理走 obs_dnn.py（匹配当前障碍模型输出布局）。
 """
 
 import os
@@ -26,13 +26,13 @@ class PrescanDnnNode(Node):
     使用方式（在 scan_angle 内）：
         node = PrescanDnnNode()
         rclpy.spin_once(node, timeout_sec=N)  # 直到 done_event set
-        if node.last_balls:
+        if node.last_blocks:
             ...
     """
 
     def __init__(self, name="prescan_dnn"):
         super().__init__(name)
-        self.last_blocks = []  # [(cx_px, cy_px, conf), ...] 最近一帧 block 检测
+        self.last_blocks = []  # [(ground_x_px, ground_y_px, conf), ...]
         self.frame_seen = 0
         self.done_event = threading.Event()
         self._sub = self.create_subscription(
@@ -67,10 +67,13 @@ class PrescanDnnNode(Node):
     def _cb(self, msg: PerceptionTargets):
         blocks = []
         for t in msg.targets:
-            if t.type == "block":
+            if t.type == "block" and t.rois:
                 roi = t.rois[0].rect
                 cx = roi.x_offset + roi.width // 2
-                cy = roi.y_offset + roi.height // 2
+                # The ROI polygons mark road cells; use the lower part of the
+                # obstacle box instead of its geometric center to locate the
+                # point where the obstacle stands on the road.
+                cy = roi.y_offset + round(roi.height * 0.7)
                 conf = t.rois[0].confidence
                 blocks.append((cx, cy, float(conf)))
         self.last_blocks = blocks

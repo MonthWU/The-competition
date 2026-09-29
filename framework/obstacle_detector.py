@@ -65,11 +65,10 @@ class ObstacleDetector:
         """像素 → 网格坐标 (r, c)。
 
         需要单应性矩阵 self._H（由 calibrate() 或 calibrate_homography.py 生成）；
-        未标定时返回占位 (2, 2)（画面中心），调用方需判断并 log warning。
+        未标定时拒绝输出地图坐标，避免把占位值当作障碍位置。
         """
         if self._H is None:
-            # 占位：未标定返回中心 (2,2)，调用方需判断并 log warning
-            return (2, 2)
+            raise RuntimeError("CALIBRATION_REQUIRED: obstacle homography missing")
         import numpy as np
         import cv2      # 2026-09-27 修：原函数内只 import numpy，用到 cv2 时 NameError
         pt = np.array([[[cx_px, cy_px]]], dtype=np.float64)

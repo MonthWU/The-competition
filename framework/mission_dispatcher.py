@@ -13,6 +13,8 @@
 
 import serial
 import os
+import signal
+from collections import Counter, defaultdict
 
 from serial_protocol import (
     SERIAL_DEV,
@@ -33,13 +35,15 @@ import time
 
 import rclpy
 from prescan_dnn_node import PrescanDnnNode
-from obstacle_detector import ObstacleDetector
-from road_judge import RoadJudge
+from obstacle_locator import ObstacleLocator
 
 PRESCAN_LAUNCH = "/root/dev_ws/appli/framework/launch/prescan.launch.py"
-SCAN_WAIT_SEC = 8.0  # 等一帧 block 检测的最大等待时间
+SCAN_WAIT_SEC = 8.0  # 每个角度等待相机与 DNN 输出的最长时间
 # 2026-09-27：每次收到下位机 [shot] 时，把当时相机画面留档到此目录（供后期检查）
 SCAN_IMG_DIR = "/root/dev_ws/appli/_tmp_scan_imgs"
+SCHOOL_PROFILE = os.environ.get(
+    "APPLI_SCHOOL_PROFILE", "/root/dev_ws/appli/framework/school_profile.json"
+)
 
 
 class MissionDispatcher:
@@ -58,21 +62,11 @@ class MissionDispatcher:
         self.map_model = map_model or MapModel()
         self._buf = bytearray()
         self.start_id = None       # 最近一次收到的启停位置 ID（0~24）
-        # 视觉组件与预扫描子进程状态（2026-09-25 补齐）：
-        # 此前 scan_angle() 引用了 self.obstacle_detector / self.road_judge /
-        # self._launch_proc / self._rclpy_init，但 __init__ 从未定义它们 ——
-        # 一旦进入 scan_angle 就抛 AttributeError。
-        self.obstacle_detector = None
-        self.road_judge = None
         self._launch_proc = None
         self._rclpy_init = False
-
-    def _ensure_vision(self):
-        """延迟构造视觉组件（缺文件时整个 dispatcher 仍可构造，只在真正扫描时报错）。"""
-        if self.obstacle_detector is None:
-            self.obstacle_detector = ObstacleDetector()
-        if self.road_judge is None:
-            self.road_judge = RoadJudge()
+        self.locator = None
+        self._votes = Counter()
+        self._confidence = defaultdict(float)
 
     # ================= 串口（预扫描阶段独占）=================
 
@@ -115,9 +109,10 @@ class MissionDispatcher:
             return False
         deadline = time.time() + timeout_s
         while time.time() < deadline:
-            if self._buf.find(TRIGGER_TEXT) >= 0:
-                idx = self._buf.find(TRIGGER_TEXT)
-                del self._buf[: idx + len(TRIGGER_TEXT)]
+            frame = b"[" + TRIGGER_TEXT + b"]"
+            if self._buf.find(frame) >= 0:
+                idx = self._buf.find(frame)
+                del self._buf[: idx + len(frame)]
                 return True
             self._read_more()
             time.sleep(0.02)
@@ -180,6 +175,9 @@ class MissionDispatcher:
             return False
         ids = [grid_id(r, c) for (r, c) in self.map_model.obstacle_cells()]
         ids.sort()
+        if self.locator is None or len(ids) != self.locator.expected_count:
+            print(f"[mission] OBSTACLE_COUNT_INVALID: detected={len(ids)} expected=1")
+            return False
         frame = build_obstacle_frame(ids)
         try:
             self.ser.write(frame)
@@ -190,86 +188,113 @@ class MissionDispatcher:
             print(f"[mission] send_map 失败: {e}")
             return False
 
-    # ================= 视觉环节钩子（待障碍识别节点实现）=================
+    # ================= 障碍视觉扫描 =================
 
     def scan_angle(self, angle: float) -> bool:
-        """实接（2026-09-23）
-
-        流程：
-          1. subprocess 拉起 framework/launch/prescan.launch.py（起 LRCP AR0234 + dnn_node_example）
-          2. 在主进程 rclpy.init + PrescanDnnNode 订阅 /hobot_dnn_detection
-          3. spin 等一帧 block 检测（最长 SCAN_WAIT_SEC 秒）
-          4. obstacle_detector.pixel_to_grid → road_judge.judge_from_hits
-          5. MapModel.set_obstacles
-
-        留档（2026-09-27 新增）：无论本次是否检出障碍，都会把该角度的相机画面
-        存到 SCAN_IMG_DIR（scan_<角度>_<时间戳>.jpg），供后期人工检查。
-
-        注：单应性矩阵未标定 → pixel_to_grid 返回占位 (2,2)；
-        实测闭环需先现场标定 calibrate(image_points, map_points)。
-        """
-        print(f"[mission] scan_angle({angle}) start_id={self.start_id} "
-              f"正在拉起 prescan.launch ...")
-        self._ensure_vision()
+        """Collect several inference frames and map detections to road cells."""
+        print(f"[mission] SCAN_ANGLE_{angle}: start_id={self.start_id}")
+        os.makedirs(SCAN_IMG_DIR, exist_ok=True)
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.join(SCAN_IMG_DIR, "prescan_%03d_%s.log" % (angle, stamp))
+        image_path = os.path.join(SCAN_IMG_DIR, "scan_%03d_%s.jpg" % (angle, stamp))
+        sub_node = None
+        log_file = None
         try:
+            log_file = open(log_path, "ab")
             self._launch_proc = subprocess.Popen(
                 ["ros2", "launch", PRESCAN_LAUNCH],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
             )
-            time.sleep(3.0)  # 等相机 + codec + dnn 起来
+            time.sleep(3.0)
+            if self._launch_proc.poll() is not None:
+                print(f"[mission] PRESCAN_LAUNCH_FAILED: {log_path}")
+                return False
             if not rclpy.ok():
                 rclpy.init()
                 self._rclpy_init = True
             sub_node = PrescanDnnNode(name="prescan_sub_" + str(int(angle)))
-            deadline = time.time() + SCAN_WAIT_SEC
-            detected = []
-            while time.time() < deadline:
-                rclpy.spin_once(sub_node, timeout_sec=0.5)
-                if sub_node.done_event.is_set():
-                    detected = sub_node.last_blocks
+            deadline = time.monotonic() + SCAN_WAIT_SEC
+            processed_frames = 0
+            positive_frames = 0
+            while time.monotonic() < deadline:
+                rclpy.spin_once(sub_node, timeout_sec=0.3)
+                if sub_node.frame_seen == processed_frames:
+                    continue
+                processed_frames = sub_node.frame_seen
+                best_in_frame = {}
+                for x, y, confidence in sub_node.last_blocks:
+                    if confidence < 0.5:
+                        continue
+                    cell = self.locator.locate(angle, x, y)
+                    if cell is not None:
+                        best_in_frame[cell] = max(best_in_frame.get(cell, 0.0), confidence)
+                for cell, confidence in best_in_frame.items():
+                    self._votes[cell] += 1
+                    self._confidence[cell] += confidence
+                if best_in_frame:
+                    positive_frames += 1
+                if (positive_frames >= self.locator.minimum_frames
+                        and sub_node.img_seen > 0):
                     break
 
-            # ===== 留档该角度画面（无论是否检出，供后期检查）=====
-            ts = time.strftime("%Y%m%d_%H%M%S")
-            img_path = os.path.join(
-                SCAN_IMG_DIR, "scan_%03d_%s.jpg" % (int(angle), ts))
-            if sub_node.save_last_image(img_path):
-                print(f"[mission] 角度 {angle}° 画面已留档: {img_path}")
-            else:
-                print(f"[mission] 角度 {angle}° 画面留档失败（未收到 /image）")
-
-            sub_node.destroy_node()
+            saved = sub_node.save_last_image(image_path)
+            print(f"[mission] SCAN_RESULT angle={angle} frames={processed_frames} "
+                  f"positive={positive_frames} image_saved={saved} log={log_path}")
+            if processed_frames == 0 or sub_node.img_seen == 0:
+                print("[mission] SCAN_NO_CAMERA_OR_INFERENCE_FRAME")
+                return False
+            return True
+        except Exception as e:
+            print(f"[mission] SCAN_ANGLE_FAILED angle={angle}: {e}; log={log_path}")
+            return False
+        finally:
+            if sub_node is not None:
+                sub_node.destroy_node()
             if self._rclpy_init:
                 rclpy.shutdown()
                 self._rclpy_init = False
-            if not detected:
-                print(f"[mission] scan_angle({angle})：未检测到 block（可能无障碍或模型未命中）")
-                return True  # 无障碍按协议仍 ack
-            hits = {}
-            for (cx_px, cy_px, conf) in detected:
-                r, c = self.obstacle_detector.pixel_to_grid(cx_px, cy_px)
-                gid = grid_id(r, c)
-                if gid is not None:
-                    hits[gid] = max(hits.get(gid, 0.0), conf)
-            obstacles = self.road_judge.judge_from_hits(hits)
-            if obstacles:
-                self.map_model.set_obstacles(list(obstacles))
-                print(f"[mission] scan_angle({angle})：命中候选 {sorted(obstacles)}")
-            else:
-                print(f"[mission] scan_angle({angle})：0 置信度命中")
-            return True
-        except Exception as e:
-            print(f"[mission] scan_angle({angle}) 异常: {e}")
-            return False
-        finally:
-            if self._launch_proc and self._launch_proc.poll() is None:
-                self._launch_proc.terminate()
+            if self._launch_proc is not None:
                 try:
-                    self._launch_proc.wait(timeout=2.0)
-                except Exception:
-                    self._launch_proc.kill()
+                    os.killpg(self._launch_proc.pid, signal.SIGTERM)
+                    self._launch_proc.wait(timeout=3.0)
+                except (ProcessLookupError, subprocess.TimeoutExpired):
+                    try:
+                        os.killpg(self._launch_proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                except Exception as e:
+                    print(f"[mission] PRESCAN_CLEANUP_WARNING: {e}")
                 self._launch_proc = None
+            if log_file is not None:
+                log_file.close()
+
+    def select_school_obstacle(self) -> bool:
+        """Accept exactly one well-supported cell before sending a map frame."""
+        if self.locator.fixed_cell is not None:
+            self.map_model.reset()
+            self.map_model.set_obstacles([self.locator.fixed_cell])
+            print(f"[mission] SCHOOL_OBSTACLE_SELECTED: id={grid_id(*self.locator.fixed_cell)} "
+                  "source=fixed_obstacle_id")
+            return True
+        if not self._votes:
+            print("[mission] SCHOOL_OBSTACLE_NOT_DETECTED")
+            return False
+        ranked = sorted(self._votes, key=lambda cell: (
+            self._votes[cell], self._confidence[cell]), reverse=True)
+        winner = ranked[0]
+        votes = self._votes[winner]
+        share = votes / sum(self._votes.values())
+        if votes < self.locator.minimum_frames or share < self.locator.minimum_share:
+            print(f"[mission] SCHOOL_OBSTACLE_AMBIGUOUS: votes={dict(self._votes)} "
+                  f"winner_share={share:.3f}")
+            return False
+        self.map_model.reset()
+        self.map_model.set_obstacles([winner])
+        print(f"[mission] SCHOOL_OBSTACLE_SELECTED: id={grid_id(*winner)} "
+              f"votes={votes} share={share:.3f} source={self.locator.source}")
+        return True
 
     # ================= 主流程 =================
 
@@ -286,6 +311,13 @@ class MissionDispatcher:
             if not self.wait_start(trigger_timeout):
                 print("[mission] 等待启停位置 [num] 超时")
                 return False
+            try:
+                self.locator = ObstacleLocator(SCHOOL_PROFILE, self.start_id)
+            except (OSError, ValueError, KeyError) as e:
+                print(f"[mission] CALIBRATION_REQUIRED: {e}")
+                return False
+            self._votes.clear()
+            self._confidence.clear()
             if not self.send_ack():
                 return False
             # [1-3] 三角度
@@ -294,10 +326,12 @@ class MissionDispatcher:
                     print(f"[mission] 第 {angle}° 等待 [shot] 超时")
                     return False
                 if not self.scan_angle(angle):
-                    print(f"[mission] 第 {angle}° 拍摄/识别失败（视觉钩子未实现/未命中）")
+                    print(f"[mission] 第 {angle}° 拍摄/识别失败")
                     return False
                 if not self.send_ack():
                     return False
+            if not self.select_school_obstacle():
+                return False
             return self.send_map()
         finally:
             self.close_serial()

@@ -63,12 +63,9 @@ CAM_OBJDET = "/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0" 
 
 
 def _check_cam(path: str, role: str) -> str:
-    """校验 by-id 路径存在；缺失时大声告警（不回退到猜测模式）。"""
+    """Require the configured camera instead of allowing a silent fallback."""
     if not os.path.exists(path):
-        print(
-            f"[run_all] 错误：{role}相机 {path} 不存在！请检查 USB 接线（by-id 路径）。"
-            f"已禁用猜测回退，避免静默打开错误相机。"
-        )
+        raise FileNotFoundError(f"[run_all] CAMERA_NOT_FOUND: {role}: {path}")
     return path
 
 

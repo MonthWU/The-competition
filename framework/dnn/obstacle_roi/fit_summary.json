@@ -1,0 +1,248 @@
+{
+  "0": {
+    "labels": [
+      "2",
+      "4",
+      "5",
+      "8",
+      "11"
+    ],
+    "missing_labels": [
+      "1",
+      "3",
+      "6",
+      "7",
+      "9",
+      "10",
+      "12",
+      "13"
+    ],
+    "overlap_count_before": 1,
+    "overlap_count_after": 0,
+    "area_retention": {
+      "2": 0.9892,
+      "5": 0.9928
+    },
+    "diagnostics": [
+      {
+        "label": "2",
+        "source_count": 2,
+        "corner_pair_rms_px": 24.88,
+        "center_shift_px": 18.28,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "4",
+        "source_count": 2,
+        "corner_pair_rms_px": 16.53,
+        "center_shift_px": 10.02,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "5",
+        "source_count": 2,
+        "corner_pair_rms_px": 34.33,
+        "center_shift_px": 30.17,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "8",
+        "source_count": 2,
+        "corner_pair_rms_px": 67.73,
+        "center_shift_px": 31.15,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "11",
+        "source_count": 2,
+        "corner_pair_rms_px": 38.49,
+        "center_shift_px": 32.43,
+        "confidence": "high",
+        "topology_mismatch": false
+      }
+    ]
+  },
+  "45": {
+    "labels": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13"
+    ],
+    "missing_labels": [
+      "5"
+    ],
+    "overlap_count_before": 1,
+    "overlap_count_after": 0,
+    "area_retention": {
+      "3": 0.9887,
+      "6": 0.9903
+    },
+    "diagnostics": [
+      {
+        "label": "1",
+        "source_count": 2,
+        "corner_pair_rms_px": 27.77,
+        "center_shift_px": 24.26,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "2",
+        "source_count": 2,
+        "corner_pair_rms_px": 33.08,
+        "center_shift_px": 24.28,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "3",
+        "source_count": 2,
+        "corner_pair_rms_px": 33.63,
+        "center_shift_px": 32.81,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "4",
+        "source_count": 2,
+        "corner_pair_rms_px": 36.32,
+        "center_shift_px": 32.19,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "6",
+        "source_count": 2,
+        "corner_pair_rms_px": 26.71,
+        "center_shift_px": 23.57,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "7",
+        "source_count": 2,
+        "corner_pair_rms_px": 28.9,
+        "center_shift_px": 27.66,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "8",
+        "source_count": 2,
+        "corner_pair_rms_px": 40.13,
+        "center_shift_px": 39.18,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "9",
+        "source_count": 2,
+        "corner_pair_rms_px": 30.95,
+        "center_shift_px": 6.32,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "10",
+        "source_count": 2,
+        "corner_pair_rms_px": 38.57,
+        "center_shift_px": 35.23,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "11",
+        "source_count": 2,
+        "corner_pair_rms_px": 32.79,
+        "center_shift_px": 22.7,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "12",
+        "source_count": 2,
+        "corner_pair_rms_px": 58.18,
+        "center_shift_px": 44.1,
+        "confidence": "medium",
+        "topology_mismatch": true
+      },
+      {
+        "label": "13",
+        "source_count": 2,
+        "corner_pair_rms_px": 36.86,
+        "center_shift_px": 24.76,
+        "confidence": "high",
+        "topology_mismatch": false
+      }
+    ]
+  },
+  "90": {
+    "labels": [
+      "9",
+      "10",
+      "12",
+      "13"
+    ],
+    "missing_labels": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "11"
+    ],
+    "overlap_count_before": 0,
+    "overlap_count_after": 0,
+    "area_retention": {},
+    "diagnostics": [
+      {
+        "label": "9",
+        "source_count": 2,
+        "corner_pair_rms_px": 32.21,
+        "center_shift_px": 31.52,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "10",
+        "source_count": 2,
+        "corner_pair_rms_px": 38.75,
+        "center_shift_px": 27.02,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "12",
+        "source_count": 2,
+        "corner_pair_rms_px": 47.22,
+        "center_shift_px": 46.3,
+        "confidence": "high",
+        "topology_mismatch": false
+      },
+      {
+        "label": "13",
+        "source_count": 2,
+        "corner_pair_rms_px": 39.9,
+        "center_shift_px": 34.38,
+        "confidence": "high",
+        "topology_mismatch": false
+      }
+    ]
+  }
+}

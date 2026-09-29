@@ -7,7 +7,7 @@
 物块相机修复后，可在 `framework/school_profile.json` 中开启物块扫描。
 检测结果经串口（`ttyS1@115200`）下发下位机执行。校赛配置和验证边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md)。
 
-当前障碍 ROI 仅来自启停区 1 的照片，三角度合并后覆盖候选点 1–12，缺少候选点 13（地图 ID 23，坐标 `(4,3)`）。原因、实际影响和补采方法见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#候选点-13-的覆盖缺口)。组委会尚未公布固定障碍位置，不能把 ID 23 当成已知赛场位置。
+当前启停区 1 的障碍 ROI 由两组六张照片的新版标注融合，三角度并集覆盖候选点 1–13。候选点 13 对应地图 ID 23、网格 `(4,3)`，在 45° 和 90° 有 ROI；这不表示组委会已公布固定障碍位置。标注来源、复现命令及现场验收边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#障碍-roi-覆盖与复核)。
 
 ## 1. 快速开始
 
@@ -233,7 +233,7 @@ is_start_frame）+ `framework/mission_dispatcher.py`
 物块任务推荐先试 `dnn/yolo11_x5_nhwc.bin`（native 链）——TROS 自带 `dnn_node_example` 能直吃，无须额外节点；现场先跑通 native，确认精度后再决定是否下线 workaround。
 
 
-当前校赛 ROI 的实际覆盖与缺口见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#候选点-13-的覆盖缺口)。本节此前记录的“0° 已框 6 个、45° 未框”是早期标注进度，不再代表运行文件。
+当前校赛 ROI 已根据六张照片的重标数据更新；实际覆盖与复核要求见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#障碍-roi-覆盖与复核)。本节其他早期标注进度不代表运行文件。
 
 
 ## 7. 物块双链路切换 & 单删指南（2026-09-29）

@@ -53,7 +53,9 @@ class ObstacleLocator:
                 if not 1 <= label <= len(OBSTACLE_CANDIDATES_13):
                     raise ValueError("ROI_LABEL_INVALID_%s" % label)
                 polygon = np.asarray(row["pts"], dtype=np.float32)
-                if polygon.shape != (4, 2) or not cv2.isContourConvex(polygon):
+                if (polygon.ndim != 2 or polygon.shape[1] != 2
+                        or len(polygon) not in (3, 4)
+                        or not cv2.isContourConvex(polygon)):
                     raise ValueError("ROI_POLYGON_INVALID_%s" % label)
                 polygons.append((OBSTACLE_CANDIDATES_13[label - 1], polygon))
             self.polygons[angle] = polygons

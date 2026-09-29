@@ -8,6 +8,7 @@ config/
 
 # 运行时产物（不入版本管理）
 _tmp_scan_imgs/
+framework/dnn/obstacle_roi/_fit_output/
 
 recoverme.sh
 

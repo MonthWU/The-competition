@@ -1,7 +1,20 @@
-# framework/ —— 避障预扫描方案设计（2027 智能搬运增量）
+# framework/ —— 智能搬运校赛预扫描设计
 
-> **状态说明**：本文档已与实际代码对齐（2026-09-23）；README §5/§6 为更高优先级速查表。
-> 后续变更请先改 README，再同步本文档。
+## 当前实现（2026-09-29）
+
+校赛以 [SCHOOL_RUNBOOK.md](../SCHOOL_RUNBOOK.md) 和 `school_profile.json` 为运行依据。本节描述当前代码；下方“历史设计记录”保留早期方案，不代表现行实现。
+
+- RDK 负责三角度视觉采集、障碍定位、地图帧与扫码阶段串口通信；云台和运动由下位机负责。
+- `start_new.sh` 先运行 `prescan_main.py`，预扫描成功后按 `object_scan_enabled` 选择 `run_qr_only.launch.py` 或 `run_all.launch.py`。当前物块相机损坏，配置为 `false`，运行到二维码扫描结束。
+- 预扫描串口独占 `/dev/ttyS1`，按 `[4]` 或 `[24]`、`[ack]`、三次 `[shot]`/`[ack]`、一帧单障碍地图的顺序工作；扫码阶段在串口释放后接管。
+- 每次 `[shot]` 由下位机完成云台转角后发送。`mission_dispatcher.py` 启动 `prescan.launch.py`，DCXIN 以 1280×720 采图，`obs_dnn.py` 用单类 `block` 模型推理，`prescan_dnn_node.py` 提供检测框和留档画面。固定位置模式也完成三次采图。
+- `obstacle_locator.py` 根据 `school_profile.json` 选择固定地图 ID 或启停区 1 的像素 ROI。当前 ROI 只覆盖候选点序号 1–12，缺少序号 13（网格 `(4,3)`，地图 ID 23）。原始 0°、45° 标注将 13 记为 `out_of_frame`，两组三角度标注都没有它的有效四边形；融合程序不会编造缺失框。启停区 2 没有适用的 ROI；固定 ID 未公布时从 `[24]` 启动返回 `CALIBRATION_REQUIRED`。
+- 地图 ID 使用零基行优先编号 `row*5+col`；校赛只接受一个障碍。未能定位或票数不足时不发地图，也不进入二维码阶段。运行配置中 `fixed_obstacle_id` 仍为 `null`。
+- 相机身份由 by-id 指定：DCXIN 用于障碍，KS1A293 用于二维码，LRCP AR0234 用于物块。当前只要求前两台和障碍模型；完整三阶段需先修复 LRCP。
+
+现有证据为归档照片的障碍模型推理、实机 DCXIN 与 KS1A293 加虚拟下位机和合成二维码的两阶段联调。真实赛场障碍、实际二维码和下位机真串口收帧尚未验收。若组委会公布固定障碍地图 ID，在 `school_profile.json` 填写该 ID 并重新启动；这不会自动补齐视觉 ROI。
+
+## 历史设计记录（2026-09-23，以下状态和模型名称可能已过时）
 
 ## 0. 架构约束（硬性）
 

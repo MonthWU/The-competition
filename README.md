@@ -7,6 +7,8 @@
 物块相机修复后，可在 `framework/school_profile.json` 中开启物块扫描。
 检测结果经串口（`ttyS1@115200`）下发下位机执行。校赛配置和验证边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md)。
 
+当前障碍 ROI 仅来自启停区 1 的照片，三角度合并后覆盖候选点 1–12，缺少候选点 13（地图 ID 23，坐标 `(4,3)`）。原因、实际影响和补采方法见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#候选点-13-的覆盖缺口)。组委会尚未公布固定障碍位置，不能把 ID 23 当成已知赛场位置。
+
 ## 1. 快速开始
 
 ```bash
@@ -27,11 +29,11 @@ ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
 ```
 
 启动链路：`appli.service` → `/usr/local/bin/appli.sh` → `start_new.sh` → `prescan_main.py` → `run_qr_only.launch.py`（当前配置）或 `run_all.launch.py`（物块相机恢复后）。
-预扫描失败会退出，不会自动进入二维码阶段。下文保留了历史联调记录；当前校赛状态以 `SCHOOL_RUNBOOK.md` 为准。
-> ④ `run_all.launch.py` `os.environ.get("DNN_ENGINE", "workaround")` 改 "native"
+预扫描失败会退出，不会自动进入二维码阶段。当前校赛状态以 `SCHOOL_RUNBOOK.md` 为准。
 
-# appli —— RDK X5 智能搬运视觉系统
+## 历史开发记录
 
+以下第 2 节及后续记录包含早期架构、相机和模型状态，仅供追溯；当前运行方式以第 1 节和校赛说明为准。
 
 ## 2. 系统架构（两阶段任务流）
 
@@ -231,8 +233,7 @@ is_start_frame）+ `framework/mission_dispatcher.py`
 物块任务推荐先试 `dnn/yolo11_x5_nhwc.bin`（native 链）——TROS 自带 `dnn_node_example` 能直吃，无须额外节点；现场先跑通 native，确认精度后再决定是否下线 workaround。
 
 
-半成品：**13 候选点照片区间标定**——0°/45° 照片人工框选斜四边形 ROI（标注器 skill
-`map-quad-annotator`，板端 :8888 页面）。当前 0° 已框 6 个（待补 label 与剩余），45° 未框。
+当前校赛 ROI 的实际覆盖与缺口见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#候选点-13-的覆盖缺口)。本节此前记录的“0° 已框 6 个、45° 未框”是早期标注进度，不再代表运行文件。
 
 
 ## 7. 物块双链路切换 & 单删指南（2026-09-29）

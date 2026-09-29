@@ -2,15 +2,13 @@
 filename: ThreadingCam.py
 author: Neolux Lee
 created: 2024-08-09
-last modified: 2024-08-09
-descrip: 
-version: 1.0
-copyright: © 2024 N.K.F.Lee
+last modified: 2026-09-28
+descrip: ThreadCap with 首帧强制写入（修"静止场景 Get None Pic"）
+version: 1.1
 """
 
 import cv2 as cv
 import threading
-import time
 import numpy as np
 from datetime import datetime
 
@@ -38,37 +36,30 @@ class ThreadCap:
         self.thread.start()
 
     def _update_frame(self):
+        # 2026-09-28 修：首帧无条件写入。静止/纯色场景下两张连续帧 MSE 极小，
+        # 会被 _are_frames_similar 判为重复，导致 self.frame 永远为 None，
+        # 外部 cam.read() 一直拿到 None（qrc_cam 报"Get None Pic"）。
+        primed = False
         while not self.stop_flag:
             ret, frame_gray = self.cap.read()
-            if ret:
-                # frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-
-                if not self.last_frame or not self._are_frames_similar(
-                        frame_gray, self.last_frame.image
-                ):
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    frame_with_timestamp = self._add_timestamp(frame_gray, timestamp)
-
-                    with self.lock:
-                        self.frame = Frame(frame_with_timestamp, timestamp)
-                        self.last_frame = Frame(frame_gray, timestamp)
+            if not ret:
+                continue
+            if not primed or not self.last_frame or not self._are_frames_similar(
+                    frame_gray, self.last_frame.image
+            ):
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                with self.lock:
+                    self.frame = Frame(frame_gray, timestamp)
+                    self.last_frame = Frame(frame_gray, timestamp)
+                primed = True
 
     def _compute_mse(self, imageA, imageB):
-        """计算两张图片的均方误差"""
         err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
         err /= float(imageA.shape[0] * imageA.shape[1])
         return err
 
     def _are_frames_similar(self, frame1, frame2, threshold=10):
-        """判断两张图片是否相似"""
-        mse = self._compute_mse(frame1, frame2)
-        return mse < threshold
-
-    def _add_timestamp(self, frame, timestamp):
-        """在图像上添加时间戳"""
-        font = cv.FONT_HERSHEY_SIMPLEX
-        # cv.putText(frame, timestamp, (10, 30), font, 1, (255), 2, cv.LINE_AA)
-        return frame
+        return self._compute_mse(frame1, frame2) < threshold
 
     def read(self):
         with self.lock:
@@ -80,37 +71,26 @@ class ThreadCap:
         return self.cap.isOpened()
 
     def release(self):
-        """停止采集线程并释放设备。
-
-        顺序至关重要：必须先 cap.release() 断流，让阻塞在 cap.read() 里的采集线程
-        立即返回失败，否则 thread.join() 可能无限等待——在 ROS 订阅回调里调用时
-        会导致节点永远无法退出（实测现象：打印了"释放摄像头"却卡住不退出）。
-        join 另加超时兜底。
-        """
+        """顺序：先 cap.release() 断流，让阻塞在 cap.read() 里的线程立即返回失败，
+        否则 thread.join() 可能无限等待。join 另加超时兜底。"""
         self.stop_flag = True
         try:
-            self.cap.release()          # 先断流，唤醒阻塞中的 read()
+            self.cap.release()
         except Exception:
             pass
         if self.thread.is_alive():
             self.thread.join(timeout=2.0)
 
 
-# 使用 ThreadCap 类
 def main():
     cam = ThreadCap(camera_index=0, width=640, height=400)
-
     fourcc = cv.VideoWriter.fourcc(*"XVID")
     out = cv.VideoWriter("output.avi", fourcc, 30.0, (640, 400))
-
     try:
         while True:
             timestamp, frame = cam.read()
             if frame is not None:
-                # 将灰度图像转换为 BGR 格式
-                # frame_bgr = cv.cvtColor(frame, cv.COLOR_GRAY2BGR)
                 cv.imshow("Camera Frame", frame)
-                # out.write(frame_bgr)
                 print(f"Timestamp: {timestamp}")
                 if cv.waitKey(1) & 0xFF == ord("q"):
                     break

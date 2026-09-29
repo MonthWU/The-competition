@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-"""obj_dnn —— YOLOv11 物块/标识识别推理节点（板端原生推理，替代 dnn_node_example）。
+"""obs_dnn —— 障碍物识别推理节点（板端原生推理，替代 dnn_node_example）。
 
 为什么需要本节点
 ----------------
-dnn/yolo11_x5.bin 的输出张量是 **NCHW + float32**，而 TROS 的 parser_yolov8
-硬编码假设 **NHWC + int32**（D-Robotics 官方导出格式）。二者不兼容，直接跑
-dnn_node_example 会在后处理阶段段错误（实测 exit -11）。
+dnn/yolo11_x5_obstacle.bin 的输出 tensor 被 `properties.layout` 标注为「cls=NCHW /
+box=NHWC」（与 obj_dnn 的物块模型 v11 一致），但 layout 字段本身不可信（实测过
+cls 标 NCHW 但 shape 是 (1,H,W,C)）。TROS 的 parser_yolov8 硬编码走 NHWC + int32
+假设，会在首帧 SIGSEGV（exit -11）。
 
 本节点改用 hobot_dnn.pyeasy_dnn 直接推理 + 自写 DFL 解码，对外发布与
 dnn_node_example **完全一致**的 ai_msgs/PerceptionTargets，因此：
-  - obj_serial（串口下发）无需改动
-  - websocket（Web 渲染画框）无需改动
-  - 也不再需要 hobot_codec / hobot_shm（直接订阅 /image 的 mjpeg，
+  - prescan_dnn_node（订阅 /hobot_dnn_detection 的解析节点）无需改动
+  - obstacle_detector.detect_from_perception() 也无需改动
+  - mission_dispatcher.scan_angle() 调用链不变
+  - 不再需要 hobot_codec / hobot_shm（直接订阅 /image 的 mjpeg，
     自己解码 + 缩放，省掉一整段零拷贝链路）
 
 坐标约定
 --------
-模型输入 640x640，图像为 W0xH0（默认 640x480，直接 resize 不保比例）。
-输出框先按模型坐标解码，再按 (W0/in_w, H0/in_h) 映射回图像坐标，
-保证 websocket 能在 /image 上正确叠框、obj_serial 能拿到图像系坐标。
+模型输入 640x640，图像为 W0xH0（DCXIN 1280x720 直接 resize 到 640x640，
+横向缩 2x、纵向缩 1.125x —— 与 obj_dnn 一致采用非保比例 resize，因为训练
+本身就是 letterbox，不在此处复刻）。输出框按 (W0/in_w, H0/in_h) 映射回
+图像坐标。
+
+输出布局自适应（2026-09-28 关键）
+--------------------------------
+不同 hb_mapper 编译版本产出的 .bin 在 cls/box tensor 上会按 layout 字段做 NCHW
+或 NHWC 标记，但**实测 layout 字段错标**。故用以下规则判定：
+
+  box tensor 的最后一维 == 4*REG_MAX (=64)  →  按 HWC 解码 (NHWC)
+  box tensor 的中间维 == 4*REG_MAX (=64)    →  按 CHW 解码 (NCHW)
+
+cls tensor 跟随 box 同一布局（C 与 box 末维位置一致）。
 """
 
 import time
@@ -54,15 +67,19 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-class ObjDnnNode(Node):
-    def __init__(self, name="obj_dnn"):
+class ObsDnn(Node):
+    def __init__(self, name="obs_dnn"):
         super().__init__(name)
 
-        self.declare_parameter("model_file", "/root/dev_ws/appli/dnn/yolo11_x5.bin")
-        self.declare_parameter("cls_names_list", "/root/dev_ws/appli/dnn/classes.names")
+        self.declare_parameter(
+            "model_file",
+            "/root/dev_ws/appli/framework/dnn/yolo11_x5_obstacle.bin")
+        self.declare_parameter(
+            "cls_names_list",
+            "/root/dev_ws/appli/framework/dnn/classes_obstacle.names")
         self.declare_parameter("image_topic", "/image")
         self.declare_parameter("msg_pub_topic_name", "hobot_dnn_detection")
-        self.declare_parameter("score_threshold", 0.25)
+        self.declare_parameter("score_threshold", 0.4)
         self.declare_parameter("nms_threshold", 0.45)
 
         self.score_thr = float(self.get_parameter("score_threshold").value)
@@ -72,19 +89,22 @@ class ObjDnnNode(Node):
         image_topic = self.get_parameter("image_topic").value
         pub_topic = self.get_parameter("msg_pub_topic_name").value
 
+        # 类别名（与 obj_dnn 一致从文件读，避免硬编码 "block"）
         with open(names_file) as f:
             self.names = [l.strip() for l in f if l.strip()]
+        if not self.names:
+            self.get_logger().warn(
+                "cls_names_list %s 为空，回退到 'block'" % names_file)
+            self.names = ["block"]
 
-        self.get_logger().info(f"loading model: {model_file}")
+        self.get_logger().info("loading model: %s" % model_file)
         self.model = dnn.load(model_file)[0]
         p = self.model.inputs[0].properties
         self.in_h, self.in_w = int(p.shape[2]), int(p.shape[3])
 
-        # ---- 探测输出布局（2026-09-28）----
-        # 不同模型的输出排布不同，且 properties.layout 字段可能标错
-        # （实测障碍模型的 cls 标 NCHW 但 shape 是 (1,H,W,C)），
-        # 故按 shape 判断：box 通道数恒为 4*REG_MAX=64，用它做判据最可靠，
-        # cls 与该布局保持一致。
+        # ---- 探测输出布局（与 obj_dnn 同一规则）----
+        # 看 box tensor 实际内存排布：通道数 64 在末维 → HWC/NHWC，
+        # 在中间维（64,h,w）→ CHW/NCHW。layout 字段不可信。
         s1 = tuple(self.model.outputs[1].properties.shape)
         self.hwc = (len(s1) == 4 and s1[-1] == 4 * REG_MAX)
         self.get_logger().info(
@@ -96,18 +116,19 @@ class ObjDnnNode(Node):
             % (self.in_w, self.in_h, len(self.names), self.names))
 
         self.pub = self.create_publisher(PerceptionTargets, pub_topic, 10)
-        self.sub = self.create_subscription(CompressedImage, image_topic, self.on_image, 10)
+        self.sub = self.create_subscription(
+            CompressedImage, image_topic, self.on_image, 10)
 
         self._frames = 0
         self._fps = 0.0
         self._t_last = time.time()
         self._log_once = False
         self.get_logger().info(
-            "obj_dnn ready: sub=%s pub=%s score=%.2f nms=%.2f"
+            "obs_dnn ready: sub=%s pub=%s score=%.2f nms=%.2f"
             % (image_topic, pub_topic, self.score_thr, self.nms_thr))
 
     @staticmethod
-    def _dfl(box):
+    def _dfl_chw(box):
         """DFL 解码（CHW 布局）：box(64,h,w) -> dist(4,h,w)，单位 grid。"""
         _, h, w = box.shape
         b = box.reshape(4, REG_MAX, h, w)
@@ -136,7 +157,8 @@ class ObjDnnNode(Node):
             return
         H0, W0 = frame.shape[:2]
 
-        resized = cv2.resize(frame, (self.in_w, self.in_h), interpolation=cv2.INTER_AREA)
+        resized = cv2.resize(frame, (self.in_w, self.in_h),
+                             interpolation=cv2.INTER_AREA)
         outs = self.model.forward(bgr2nv12(resized))
         t1 = time.time()
 
@@ -173,7 +195,7 @@ class ObjDnnNode(Node):
                 mask = csc >= self.score_thr
                 if not mask.any():
                     continue
-                dist = self._dfl(box)                        # (4,h,w)
+                dist = self._dfl_chw(box)                      # (4,h,w)
                 ys, xs = np.nonzero(mask)
                 ax = (xs + 0.5) * stride
                 ay = (ys + 0.5) * stride
@@ -182,7 +204,8 @@ class ObjDnnNode(Node):
                 x2 = ax + dist[2][ys, xs] * stride
                 y2 = ay + dist[3][ys, xs] * stride
             for i in range(len(xs)):
-                boxes.append([float(x1[i]), float(y1[i]), float(x2[i]), float(y2[i])])
+                boxes.append([float(x1[i]), float(y1[i]),
+                              float(x2[i]), float(y2[i])])
                 scores.append(float(csc[ys[i], xs[i]]))
                 ids.append(int(cid[ys[i], xs[i]]))
 
@@ -235,7 +258,7 @@ class ObjDnnNode(Node):
         out_msg.fps = int(self._fps)
 
         perf = Perf()
-        perf.type = "obj_dnn"
+        perf.type = "obs_dnn"
         perf.stamp_start = msg.header.stamp
         perf.stamp_end = msg.header.stamp
         perf.time_ms_duration = (time.time() - t0) * 1000.0
@@ -243,9 +266,7 @@ class ObjDnnNode(Node):
 
         self.pub.publish(out_msg)
 
-        # 每完成一个 1 秒统计窗口、且有目标时打印一行。
-        # （原先按 int(fps)%5==0 判断，首帧会用"节点启动到首帧"的累积时长算出接近 0 的
-        #   fps 却仍满足条件，导致日志里出现误导性的 "fps 0.0"。）
+        # 每完成一个 1 秒统计窗口、且有目标时打印一行
         if self._log_once and out_msg.targets:
             self._log_once = False
             self.get_logger().info(
@@ -255,7 +276,7 @@ class ObjDnnNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ObjDnnNode()
+    node = ObsDnn()
     try:
         rclpy.spin(node)
     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):

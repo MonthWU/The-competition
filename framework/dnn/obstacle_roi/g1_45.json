@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "group": "g1",
+    "angle_deg": 45,
+    "image": "angle_pic2.jpg",
+    "image_path": "/root/dev_ws/appli/_tmp_scan_imgs/angle_pic2.jpg",
+    "image_size": [1280, 720],
+    "collected_at": "2026-09-28 19:xx",
+    "source": "user_manual_annotation (map_annotator.html)",
+    "label_scheme": "OBSTACLE_CANDIDATES_13 (1-indexed, see framework/map_model.py)",
+    "vertex_order": "ccw",
+    "coordinate_space": "image_pixels_relative (x right, y down; NOT map/absolute coords)",
+    "note": "收集阶段；同角度多组(不同组)后续拟合降低人工框选误差/重叠；每张图只能覆盖部分候选点，跨角度互补",
+    "grid_mapping_confirmed": false,
+    "open_question": "label=9 的 pts 顶点数待用户确认（本文件按 4 顶点存储）"
+  },
+  "labels": {
+    "1":  {"status": "in_frame", "grid_hint": [0, 1], "pts": [[623, 234], [628, 276], [850, 325], [934, 277]], "w": 13810},
+    "2":  {"status": "in_frame", "grid_hint": [0, 3], "pts": [[1277, 392], [1277, 324], [956, 277], [882, 329]], "w": 23515},
+    "3":  {"status": "in_frame", "grid_hint": [1, 0], "pts": [[618, 232], [309, 259], [400, 309], [616, 271]], "w": 13128},
+    "4":  {"status": "in_frame", "grid_hint": [1, 2], "pts": [[644, 333], [862, 387], [944, 343], [778, 310]], "w": 11130},
+    "5":  {"status": "out_of_frame"},
+    "6":  {"status": "in_frame", "grid_hint": [2, 1], "pts": [[641, 332], [424, 376], [298, 317], [473, 296]], "w": 14088},
+    "7":  {"status": "in_frame", "grid_hint": [2, 2], "pts": [[643, 333], [425, 376], [642, 442], [859, 390]], "w": 23660},
+    "8":  {"status": "in_frame", "grid_hint": [2, 3], "pts": [[867, 389], [1212, 465], [1068, 587], [653, 445]], "w": 53331},
+    "9":  {"status": "in_frame", "grid_hint": [3, 0], "pts": [[264, 261], [313, 310], [4, 364], [5, 282]], "w": 19502},
+    "10": {"status": "in_frame", "grid_hint": [3, 2], "pts": [[418, 374], [80, 438], [250, 568], [637, 445]], "w": 54617},
+    "11": {"status": "out_of_frame"},
+    "12": {"status": "out_of_frame"},
+    "13": {"status": "out_of_frame"}
+  },
+  "count_in_frame": 9,
+  "count_out_of_frame": 4,
+  "count_total": 13
+}

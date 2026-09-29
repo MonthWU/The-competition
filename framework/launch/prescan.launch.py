@@ -8,7 +8,7 @@
 
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
@@ -76,44 +76,27 @@ def generate_launch_description():
         output="screen",
     )
 
-    # 解码 NV12 → shared_mem（jpeg 输入 → NV12 输出），与 v11 launch 一致
-    codec_decode_node = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("hobot_codec"),
-                "launch/hobot_codec_decode.launch.py",
-            )
-        ),
-        launch_arguments={
-            "codec_in_mode": "ros",
-            "codec_out_mode": "shared_mem",
-            "codec_sub_topic": "/image",
-            "codec_pub_topic": "/hbmem_img",
-        }.items(),
-    )
-
-    # hobot_shm 是环境配置包（设 FASTRTPS QoS 让共享内存零拷贝），不是 Node
-    shm_node = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("hobot_shm"),
-                "launch/hobot_shm.launch.py",
-            )
-        )
-    )
-
-    dnn_node = Node(
-        package="dnn_node_example",
-        executable="example",
-        name="prescan_dnn_example",
-        parameters=[
-            {"config_file": LaunchConfiguration("dnn_task_json")},
-            {"dump_render_img": 0},
-            {"feed_type": 1},
-            {"is_shared_mem_sub": 1},
-            {"msg_pub_topic_name": "hobot_dnn_detection"},
+    # 障碍推理：obs_dnn（2026-09-28 替换 dnn_node_example）
+    # 原因：障碍模型输出 layout 与 TROS parser_yolov8 不兼容（cls 被标为 NCHW），
+    #      官方 dnn_node_example 会 SIGSEGV；obs_dnn 用自写解码（按实际内存布局）
+    #      绕开该问题，对外仍发布同样的 PerceptionTargets。
+    # 注1：framework/ 不是 ROS 包（无 package.xml），无法用 Node(package=...) 引用，
+    #      故用 ExecuteProcess 直接执行脚本。
+    # 注2：obs_dnn 直接订阅 /image，因此不再需要 hobot_codec / hobot_shm；
+    #      两者暂时保留（仅为兼容其它潜在消费者），可后续清理。
+    obs_dnn_node = ExecuteProcess(
+        cmd=[
+            "python3", "/root/dev_ws/appli/framework/obs_dnn.py",
+            "--ros-args",
+            "-p", ("model_file:=/root/dev_ws/appli/framework/dnn/"
+                   "yolo11_x5_obstacle.bin"),
+            "-p", ("cls_names_list:=/root/dev_ws/appli/framework/dnn/"
+                   "classes_obstacle.names"),
+            "-p", "image_topic:=/image",
+            "-p", "msg_pub_topic_name:=hobot_dnn_detection",
+            "-p", "score_threshold:=0.4",
+            "-p", "nms_threshold:=0.45",
         ],
-        arguments=["--ros-args", "--log-level", "warn"],
         output="screen",
     )
     # Web 预览：订阅 LRCP 的 /image 推流到板端 :8000（nginx via websocket 节点）
@@ -141,9 +124,7 @@ def generate_launch_description():
             device_arg,
             config_arg,
             usb_cam_node,
-            codec_decode_node,
-            shm_node,
-            dnn_node,
+            obs_dnn_node,
             prescan_web_node,
         ]
     )

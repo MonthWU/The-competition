@@ -81,16 +81,19 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory("obj_detect"),
-                # 2026-09-25（P6）：一键入口切到 v11 native 链路 —— obj_dnn 板端原生推理
-                # + 9 类物块/标识模型（dnn/yolo11_x5.bin）。
-                # 原 obj_detect.launch.py（dnn_node_example + 老 6 类 task_obj.json）因模型
-                # 输出格式与 TROS parser 不兼容会段错误，已弃用；文件保留以便回退。
-                "launch/obj_detect_v11_native.launch.py",
+                # 2026-09-29（P6 续）：统一入口 obj_detect_v11.launch.py，
+                # 内部按 dnn_engine 切换 workaround（默认）/native 两套等价推理。
+                # 历史版本（obj_detect_v11_native.launch.py）已并入此 launch；
+                # 老的 obj_detect.launch.py（NCHW+老 6 类）已弃用，保留以便回退。
+                "launch/obj_detect_v11.launch.py",
             )
         ),
         launch_arguments={
             "cap_objdet": cap_objdet_devnode,
             "cap_qrc": cap_qrc_devnode,
+            # 切换方式：export DNN_ENGINE=workaround|native 后启动即可；
+            # 不传则默认 workaround（与现场现役一致，避免一上来翻车）。
+            "dnn_engine": os.environ.get("DNN_ENGINE", "workaround"),
         }.items(),
     )
 

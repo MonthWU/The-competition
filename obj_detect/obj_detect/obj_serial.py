@@ -102,7 +102,6 @@ class ObjSerial(Node):
         self._done = False
         self.mode = 0 if self.qr_only else 2  # 0: QR only; 1: objects; 2: both
         # self.call_opened() # no send a startup signal. Send all even empty qrcode data
-        self.cnt = 0
 
     def call_opened(self):
         self.ser.write(ByteArray([0xFF, 0xFF, 0xFF, 0xFE]))
@@ -115,20 +114,13 @@ class ObjSerial(Node):
             return
         self.get_logger().info(f"QRC: {msg.data}")
         if msg.data != "":
-            if self.cnt == 50:
-                self.cnt = 0
-                self.send_qrc(msg.data)
-            self.cnt += 1
-            if (
-                msg.data != "0000000"
-            ):  # 如果识别到了二维码（valid data）就多发送几次后再切换模式
-                self.send_qrc(msg.data)
-                self.send_qrc(msg.data)
-                self.send_qrc(msg.data)
-                self.send_qrc(msg.data)
-                self.mode = 1  # valid adata scanned to set flag to 1
-                if self.qr_only:
-                    self._done = True
+            self.send_qrc(msg.data)
+            self.send_qrc(msg.data)
+            self.send_qrc(msg.data)
+            self.send_qrc(msg.data)
+            self.mode = 1
+            if self.qr_only:
+                self._done = True
 
     def det_callback(self, msg):
         # self.get_logger().info("Det recvd!")

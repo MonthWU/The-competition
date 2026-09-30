@@ -12,7 +12,6 @@ import datetime
 
 
 from utils.neo_img_trans import ros2cv
-from qrc_skandier.task_code import is_valid_task_code
 
 
 class QrcScanner(Node):
@@ -60,17 +59,13 @@ class QrcScanner(Node):
         decoded_objects = pyzbar.decode(cv_img)
         if decoded_objects:
             try:
-                text = decoded_objects[0].data.decode("utf-8").strip()
+                text = decoded_objects[0].data.decode("utf-8")
             except UnicodeDecodeError:
-                text = ""
-            if is_valid_task_code(text):
-                self.get_logger().info(f"Detected valid task code: {text}")
+                self.get_logger().warn("Ignoring QR payload that cannot be decoded as UTF-8")
+                return
+            if text:
+                self.get_logger().info(f"Decoded QR payload: {text}")
                 self.res_pub.publish(String(data=text))
-            else:
-                self.get_logger().warn(f"Ignoring invalid QR payload: {text!r}")
-                self.res_pub.publish(String(data="0000000"))
-        else:
-            self.res_pub.publish(String(data="0000000")) # send an empty string if no qrc detected, to show running
         self.get_logger().info(f"Scan time: {time.time() - t0:.3f}")
         
         # TODO: Remove this part showing the image instead, using a flask server

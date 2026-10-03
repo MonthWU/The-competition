@@ -3,8 +3,8 @@
 > 本仓库为 **The-competition**（TI 比赛相关内容）的 **26GongChuan_vision** 分支。
 
 基于 ROS2 Humble 的智能搬运机器人视觉子系统，运行于地瓜 RDK X5（`/root/dev_ws/appli`），
-配套 2027 浙江省工创大赛智能搬运赛项。校赛入口依次执行**障碍物预扫描、二维码扫描**；
-物块相机修复后，可在 `framework/school_profile.json` 中开启物块扫描。
+配套 2027 浙江省工创大赛智能搬运赛项。校赛入口依次执行**障碍物预扫描、二维码发送、物块识别**，
+`framework/school_profile.json` 已设置 `object_scan_enabled: true`。
 检测结果经串口（`ttyS1@115200`）下发下位机执行。校赛配置和验证边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md)。
 
 当前启停区 1 的障碍 ROI 由两组六张照片的新版标注融合，三角度并集覆盖候选点 1–13。候选点 13 对应地图 ID 23、网格 `(4,3)`，在 45° 和 90° 有 ROI；这不表示组委会已公布固定障碍位置。标注来源、复现命令及现场验收边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#障碍-roi-覆盖与复核)。
@@ -12,7 +12,7 @@
 ## 1. 快速开始
 
 ```bash
-# 按当前校赛配置检查所需相机、串口和模型；服务当前 disabled
+# 按完整配置检查三路相机、串口和模型
 bash /root/dev_ws/appli/start_new.sh --check
 
 # 执行当前链路；先等下位机 [4] 或 [24]，再等三次 [shot]
@@ -28,8 +28,15 @@ bash /usr/local/bin/appli.sh
 ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
 ```
 
-启动链路：`appli.service` → `/usr/local/bin/appli.sh` → `start_new.sh` → `prescan_main.py` → `run_qr_only.launch.py`（当前配置）或 `run_all.launch.py`（物块相机恢复后）。
+启动链路：`appli.service` → `/usr/local/bin/appli.sh` → `start_new.sh` → `prescan_main.py` → `run_all.launch.py`。
+二维码四帧写入串口并刷新后发布 `/qrc_forwarded`；扫码相机释放后再启动物块相机。
+物块检测框面积默认小于 **2000 像素²** 的目标被剔除，网页和串口均使用过滤结果，见 [面积过滤说明](obj_detect/AREA_FILTER.md)。
+默认推理引擎为已验证的 `workaround`；备用 `native` 当前存在既有实拍推理崩溃，节点失败会终止完整流程并清理资源。
+完整入口支持 `APPLI_SERIAL_DEVICE` 覆盖所有阶段的串口，ROS 日志目录在启动脚本及服务中显式配置。
+录像只在收到实际图像后创建，轮转、打包和退出时关闭 AVI；停止任务同时关闭物块相机子进程。
 预扫描失败会退出，不会自动进入二维码阶段。当前校赛状态以 `SCHOOL_RUNBOOK.md` 为准。
+
+可复现的板端自动联调：按 [校赛验收说明](SCHOOL_RUNBOOK.md#完整流程自动联调) 运行 `tools/verify_full_flow.py`。
 
 ## 历史开发记录
 

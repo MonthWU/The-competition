@@ -1,5 +1,5 @@
 #!/bin/bash
-# School vision flow. The profile can stop after QR while the object camera is unavailable.
+# School vision flow: obstacle scan, QR forwarding, then object detection.
 
 WS=/root/dev_ws/appli
 PRESCAN_TIMEOUT="${1:-30}"
@@ -57,7 +57,10 @@ if ! preflight; then
 fi
 
 export CAM_TYPE=usb
-export ROS_DOMAIN_ID=42
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
+export ROS_HOME="${ROS_HOME:-/root/.ros}"
+export ROS_LOG_DIR="${ROS_LOG_DIR:-$ROS_HOME/log}"
+mkdir -p "$ROS_LOG_DIR" || exit 2
 
 # The TROS setup script reads unset variables; enable nounset only afterward.
 source /opt/tros/humble/setup.bash || exit 2
@@ -79,4 +82,4 @@ if [ "$MODE" = qr_only ]; then
     exec ros2 launch "$WS/launch/run_qr_only.launch.py" "serial_device:=$SERIAL_DEVICE"
 fi
 printf '[appli] STAGE_2_QR_SCAN_THEN_OBJECT_SCAN\n'
-exec ros2 launch "$WS/launch/run_all.launch.py"
+exec ros2 launch "$WS/launch/run_all.launch.py" "serial_device:=$SERIAL_DEVICE"

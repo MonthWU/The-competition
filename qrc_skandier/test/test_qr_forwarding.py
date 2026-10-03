@@ -59,7 +59,9 @@ def test_serial_forwards_original_text_four_times(payload, qr_only):
         mode=0 if qr_only else 2,
         qr_only=qr_only,
         _done=False,
-        ser=SimpleNamespace(write=lambda frame: frames.append(bytes(frame))),
+        ser=SimpleNamespace(write=lambda frame: frames.append(bytes(frame)), flush=lambda: None),
+        qrc_forwarded_pub=SimpleNamespace(
+            get_subscription_count=lambda: 1, publish=lambda message: None),
         get_logger=make_logger,
         pub_sent=lambda message: None,
     )
@@ -89,3 +91,29 @@ def test_empty_text_does_not_send_or_stop(monkeypatch):
     assert published == []
     assert node.mode == 0
     assert not node._done
+
+
+def test_camera_handoff_follows_four_uart_writes_and_flush():
+    events = []
+    node = SimpleNamespace(
+        mode=2, qr_only=False, _done=False, get_logger=make_logger,
+        send_qrc=lambda payload: events.append("write"),
+        ser=SimpleNamespace(flush=lambda: events.append("flush")),
+        qrc_forwarded_pub=SimpleNamespace(
+            get_subscription_count=lambda: 1,
+            publish=lambda message: events.append("handoff")))
+    ObjSerial.qrc_callback(node, SimpleNamespace(data="123+231"))
+    assert events == ["write"] * 4 + ["flush", "handoff"]
+
+
+def test_failed_uart_write_does_not_request_camera_handoff():
+    events = []
+    def fail(payload):
+        raise OSError("UART_WRITE_FAILED")
+    node = SimpleNamespace(
+        mode=2, qr_only=False, _done=False, get_logger=make_logger,
+        send_qrc=fail,
+        qrc_forwarded_pub=SimpleNamespace(publish=lambda message: events.append("handoff")))
+    with pytest.raises(OSError, match="UART_WRITE_FAILED"):
+        ObjSerial.qrc_callback(node, SimpleNamespace(data="123+231"))
+    assert events == []

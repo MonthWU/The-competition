@@ -1,9 +1,11 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 from ai_msgs.msg import PerceptionTargets
 import datetime
 import numpy as np
+import time
 
 from serial import Serial
 
@@ -63,6 +65,10 @@ class ObjSerial(Node):
             String, "qrc_result", self.qrc_callback, 10
         )
         self.serial_send_pub = self.create_publisher(String, "serial_send", 10)
+        self.qrc_forwarded_pub = self.create_publisher(
+            String, "qrc_forwarded", QoSProfile(
+                depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                reliability=ReliabilityPolicy.RELIABLE))
 
         # ---- 区域过滤 + "最近目标"参考点（2026-09-25 参数化补齐）----
         # 检测链路实际图像系为 640x480（obj_cam.launch.py 默认）。
@@ -119,7 +125,17 @@ class ObjSerial(Node):
             self.send_qrc(msg.data)
             self.send_qrc(msg.data)
             self.mode = 1
+            self.ser.flush()
+            # The camera handoff follows successful UART writes, so a fast
+            # scanner cannot stop before the serial subscriber receives it.
+            deadline = time.monotonic() + 10.0
+            while self.qrc_forwarded_pub.get_subscription_count() == 0:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("QR_HANDOFF_SUBSCRIBER_TIMEOUT")
+                time.sleep(0.05)
+            self.qrc_forwarded_pub.publish(String(data=msg.data))
             if self.qr_only:
+                time.sleep(0.3)  # Allow the one-shot handoff to reach the killer.
                 self._done = True
 
     def det_callback(self, msg):

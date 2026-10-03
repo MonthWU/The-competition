@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 import time
 
@@ -10,19 +11,20 @@ class QrcCamKiller(Node):
         self._done = False
         self.qrc_res_sub = self.create_subscription(
             String,
-            "qrc_result",
+            "qrc_forwarded",
             self.kill_qrc,
-            10,
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                       reliability=ReliabilityPolicy.RELIABLE),
         )
         self.qrc_kill_pub = self.create_publisher(String, "kill_qrc", 10)
 
     def kill_qrc(self, msg):
-        """收到非空解码文本后停止扫码节点并退出。
+        """收到串口已发送的非空文本后停止扫码节点并退出。
 
         注意：不在回调内 destroy_node()（回调内销毁节点会让 rclpy 卡住、进程残留），
         改为置 _done 标志，由 main 的循环统一收尾。
         """
-        if not msg.data:
+        if not msg.data or self._done:
             return
         self.get_logger().info(f"Received: {msg.data}, killing qrc* nodes")
         self.qrc_kill_pub.publish(String(data="kill"))

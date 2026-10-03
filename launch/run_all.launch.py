@@ -1,7 +1,8 @@
 import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python import get_package_share_directory
 
@@ -88,6 +89,7 @@ def generate_launch_description():
         launch_arguments={
             "cap_objdet": cap_objdet_devnode,
             "cap_qrc": cap_qrc_devnode,
+            "serial_device": LaunchConfiguration("serial_device"),
             # 切换方式：export DNN_ENGINE=workaround|native 后启动即可；
             # 不传则默认 workaround（与现场现役一致，避免一上来翻车）。
             "dnn_engine": os.environ.get("DNN_ENGINE", "workaround"),
@@ -108,7 +110,17 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            DeclareLaunchArgument("serial_device", default_value="/dev/ttyS1"),
+            RegisterEventHandler(OnProcessExit(on_exit=_stop_on_process_failure)),
             obj_detection,
             qrc_skandier,
         ]
     )
+
+
+def _stop_on_process_failure(event, context):
+    """Stop the complete task if a launched node fails."""
+    if event.returncode != 0 and not context.is_shutdown:
+        raise RuntimeError(
+            f"PROCESS_FAILED: {event.process_name} exit={event.returncode}"
+        )

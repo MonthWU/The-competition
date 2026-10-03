@@ -25,12 +25,14 @@
                            PerceptionTargets 消息）
 - score_threshold / nms_threshold : 评分 / NMS 阈值
                             （绕行链直接透传给 obj_dnn；原生链通过 task JSON 提供）
+- min_target_area_px     : 原图检测框最小面积（默认 2000 像素²，两链路共用）
 
 链路组成（取 dnn_engine:=workaround 时）
 ----------------------------------------
   obj_camd (守护 /kill_qrc → 拉起 obj_cam.launch.py)
     → hobot_usb_cam (LRCP AR0234 @640x480 MJPEG → /image)
-    → obj_dnn (板端原生推理 /image → /hobot_dnn_detection)
+    → obj_dnn (板端原生推理 /image → /hobot_dnn_detection_raw)
+    → obj_target_area_filter (面积过滤 → /hobot_dnn_detection)
     → obj_serial (串口 ttyS1 下发) + websocket (板端 :8000 画框) + obj_video_dumper
 
 链路组成（取 dnn_engine:=native 时）
@@ -38,7 +40,8 @@
   obj_camd (同)
     → hobot_usb_cam (同 → /image)
     → hobot_codec_decode (/image → 共享内存 /hbmem_img)
-    → dnn_node_example (/hbmem_img → /hobot_dnn_detection，喂 task_obj_v11_nhwc.json)
+    → dnn_node_example (/hbmem_img → /hobot_dnn_detection_raw，喂 task_obj_v11_nhwc.json)
+    → obj_target_area_filter (面积过滤 → /hobot_dnn_detection)
     → obj_serial + websocket + obj_video_dumper（同）
     注：原生链需要 hobot_shm；绕行链不需要。
 
@@ -98,6 +101,10 @@ def generate_launch_description():
         default_value="/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0",
         description="qrcode camera device (by-id, 预留：扫码由 run_all 拉起)",
     )
+    serial_device_arg = DeclareLaunchArgument(
+        "serial_device", default_value="/dev/ttyS1",
+        description="UART used after obstacle prescan releases the same device",
+    )
 
     # === 两链路共有的 launch 参数（命名完全一致）===
     image_width_launch_arg = DeclareLaunchArgument(
@@ -110,6 +117,12 @@ def generate_launch_description():
         "msg_pub_topic_name",
         default_value=TextSubstitution(text="hobot_dnn_detection"),
         description="DNN 输出 topic（两链路同名；下游 obj_serial / websocket 订阅）")
+    minimum_area_arg = DeclareLaunchArgument(
+        "min_target_area_px", default_value=TextSubstitution(text="2000"),
+        description="Minimum target box width * height in original image pixels squared; 0 disables size filtering")
+    raw_detection_topic = PythonExpression([
+        "'", LaunchConfiguration("msg_pub_topic_name"), "_raw'"
+    ])
 
     # === 引擎选择（核心开关）===
     engine_arg = DeclareLaunchArgument(
@@ -149,6 +162,7 @@ def generate_launch_description():
         name="obj_camd",
         parameters=[
             {"usb_video_device": LaunchConfiguration("cap_objdet")},
+            {"qrc_video_device": LaunchConfiguration("cap_qrc")},
             {"usb_image_width": LaunchConfiguration("dnn_example_image_width")},
             {"usb_image_height": LaunchConfiguration("dnn_example_image_height")},
             {"usb_framerate": 90},
@@ -163,10 +177,22 @@ def generate_launch_description():
     )
 
     # obj_serial（两链路共用：都订阅 /hobot_dnn_detection）
+    target_area_filter_node = Node(
+        package="obj_detect",
+        executable="obj_target_area_filter",
+        name="obj_target_area_filter",
+        parameters=[{
+            "input_topic": raw_detection_topic,
+            "output_topic": LaunchConfiguration("msg_pub_topic_name"),
+            "min_target_area_px": LaunchConfiguration("min_target_area_px"),
+        }],
+        output="screen",
+    )
     obj_serial_node = Node(
         package="obj_detect",
         executable="obj_serial",
         name="obj_serial",
+        parameters=[{"serial_device": LaunchConfiguration("serial_device")}],
         output="screen",
     )
 
@@ -210,7 +236,7 @@ def generate_launch_description():
             {"model_file": LaunchConfiguration("model_file")},
             {"cls_names_list": LaunchConfiguration("cls_names_list")},
             {"image_topic": "/image"},
-            {"msg_pub_topic_name": LaunchConfiguration("msg_pub_topic_name")},
+            {"msg_pub_topic_name": raw_detection_topic},
             {"score_threshold": LaunchConfiguration("score_threshold")},
             {"nms_threshold": LaunchConfiguration("nms_threshold")},
         ],
@@ -257,7 +283,7 @@ def generate_launch_description():
             {"dump_render_img": LaunchConfiguration("dnn_example_dump_render_img")},
             {"feed_type": 1},
             {"is_shared_mem_sub": 1},
-            {"msg_pub_topic_name": LaunchConfiguration("msg_pub_topic_name")},
+            {"msg_pub_topic_name": raw_detection_topic},
         ],
         arguments=["--ros-args", "--log-level", "warn"],
         condition=IfCondition(PythonExpression([
@@ -267,14 +293,15 @@ def generate_launch_description():
 
     return LaunchDescription([
         # args
-        cap_objdet_dev_arg, cap_qrc_dev_arg,
+        cap_objdet_dev_arg, cap_qrc_dev_arg, serial_device_arg,
         engine_arg,
         image_width_launch_arg, image_height_launch_arg, msg_pub_topic_name_launch_arg,
+        minimum_area_arg,
         workaround_model_arg, workaround_names_arg,
         workaround_score_arg, workaround_nms_arg,
         native_task_json_arg, native_dump_render_arg,
         # shared nodes (always)
-        obj_camd_node, obj_serial_node, video_take_node, objdet_web_node,
+        obj_camd_node, target_area_filter_node, obj_serial_node, video_take_node, objdet_web_node,
         # engine-specific
         obj_dnn_node,
         objdet_nv12_codec_node, shared_mem_node, dnn_node_example_node,

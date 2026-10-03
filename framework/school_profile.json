@@ -1,6 +1,6 @@
 {
   "expected_obstacle_count": 1,
-  "object_scan_enabled": false,
+  "object_scan_enabled": true,
   "fixed_obstacle_id": null,
   "roi_start_id": 4,
   "roi_file": "dnn/obstacle_roi/merged_runtime.json",

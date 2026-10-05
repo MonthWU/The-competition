@@ -65,7 +65,7 @@ import os
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression, TextSubstitution
 from launch_ros.actions import Node
@@ -155,11 +155,17 @@ def generate_launch_description():
         description="native 链是否保存带框渲染图（仅 dnn_engine:=native 生效）")
 
     # === 共享节点（两链路都拉起） ===
+    # 相机启动方式：camera_daemon=true（默认）由 obj_camd 守护等 /kill_qrc；
+    # false 立即拉起 obj_cam.launch.py（物块调试入口 coloritems_test.sh 使用）。
+    camera_daemon_arg = DeclareLaunchArgument(
+        "camera_daemon", default_value=TextSubstitution(text="true"),
+        description="true=obj_camd 守护（正式流程）；false=立即开检测相机（调试）")
     # 守护节点：收 /kill_qrc 后用 cap_objdet 拉起 obj_cam.launch.py
     obj_camd_node = Node(
         package="obj_detect",
         executable="obj_camd",
         name="obj_camd",
+        condition=IfCondition(LaunchConfiguration("camera_daemon")),
         parameters=[
             {"usb_video_device": LaunchConfiguration("cap_objdet")},
             {"qrc_video_device": LaunchConfiguration("cap_qrc")},
@@ -174,6 +180,24 @@ def generate_launch_description():
             },
         ],
         output="screen",
+    )
+
+    # 调试直启：camera_daemon:=false 时跳过 /kill_qrc 门控，立即打开检测相机。
+    # 与 obj_camd 拉起的是同一个 obj_cam.launch.py，参数对齐（90fps、宽高同源）。
+    obj_cam_direct_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("obj_detect"),
+                "launch/obj_cam.launch.py",
+            )
+        ),
+        condition=UnlessCondition(LaunchConfiguration("camera_daemon")),
+        launch_arguments={
+            "cap_objdet": LaunchConfiguration("cap_objdet"),
+            "usb_image_width": LaunchConfiguration("dnn_example_image_width"),
+            "usb_image_height": LaunchConfiguration("dnn_example_image_height"),
+            "usb_framerate": "90",
+        }.items(),
     )
 
     # obj_serial（两链路共用：都订阅 /hobot_dnn_detection）
@@ -239,6 +263,9 @@ def generate_launch_description():
             {"msg_pub_topic_name": raw_detection_topic},
             {"score_threshold": LaunchConfiguration("score_threshold")},
             {"nms_threshold": LaunchConfiguration("nms_threshold")},
+            # Whole-image white-point calibration from the AR0234 A4 reference.
+            # Recalibrate this profile with tools/diagnostics/calibrate_object_color.py.
+            {"color_balance_file": "/root/dev_ws/appli/framework/object_camera_color.json"},
         ],
         output="screen",
         condition=IfCondition(PythonExpression([
@@ -294,14 +321,15 @@ def generate_launch_description():
     return LaunchDescription([
         # args
         cap_objdet_dev_arg, cap_qrc_dev_arg, serial_device_arg,
-        engine_arg,
+        engine_arg, camera_daemon_arg,
         image_width_launch_arg, image_height_launch_arg, msg_pub_topic_name_launch_arg,
         minimum_area_arg,
         workaround_model_arg, workaround_names_arg,
         workaround_score_arg, workaround_nms_arg,
         native_task_json_arg, native_dump_render_arg,
         # shared nodes (always)
-        obj_camd_node, target_area_filter_node, obj_serial_node, video_take_node, objdet_web_node,
+        obj_camd_node, obj_cam_direct_node,
+        target_area_filter_node, obj_serial_node, video_take_node, objdet_web_node,
         # engine-specific
         obj_dnn_node,
         objdet_nv12_codec_node, shared_mem_node, dnn_node_example_node,

@@ -1,0 +1,8 @@
+{
+  "camera": "LRCP AR0234",
+  "environment": "indoor; recalibrate after moving outdoors or changing lighting",
+  "brightness": 0,
+  "method": "neutral white reference; R/G/B order",
+  "reference_rgb": [213.0, 203.0, 236.0],
+  "rgb_gains": [0.953, 1.0, 0.860]
+}

@@ -21,12 +21,16 @@ dnn_node_example **完全一致**的 ai_msgs/PerceptionTargets，因此：
 保证 websocket 能在 /image 上正确叠框、obj_serial 能拿到图像系坐标。
 """
 
+import json
+from pathlib import Path
 import time
 
 import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
+from rcl_interfaces.msg import SetParametersResult
 from sensor_msgs.msg import CompressedImage, RegionOfInterest
 
 from ai_msgs.msg import PerceptionTargets, Perf, Roi, Target
@@ -54,6 +58,69 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
+def color_balance_lut(rgb_gains):
+    """Build a whole-image BGR lookup table from calibrated R/G/B gains."""
+    gains = np.asarray(rgb_gains, dtype=np.float32)
+    if gains.shape != (3,) or not np.all(np.isfinite(gains)) or np.any(gains <= 0):
+        raise ValueError("color_balance_rgb must contain three finite positive R/G/B gains")
+    if np.array_equal(gains, np.ones(3, dtype=np.float32)):
+        return None
+    return np.clip(np.arange(256, dtype=np.float32)[:, None] * gains[::-1],
+                   0, 255).astype(np.uint8).reshape(1, 256, 3)
+
+
+NMS_CLASS_OFFSET = 4096.0  # 大于模型输入尺寸，保证不同类别的框在 NMS 前互不重叠
+
+
+def class_aware_nms(boxes, scores, ids, score_thr, nms_thr):
+    """按类别隔离的 NMS。
+
+    cv2.dnn.NMSBoxes 是跨类别无差别的：叠块场景中标靶框会抑制压在它上面
+    的物块框。Ultralytics 训练侧与 TROS native parser 均为按类 NMS，此处
+    通过类别偏移实现等效分组；同类框相对位置不变，类内抑制行为不变。
+    """
+    if not boxes:
+        return []
+    shifted = [
+        [b[0] + i * NMS_CLASS_OFFSET, b[1] + i * NMS_CLASS_OFFSET,
+         b[2] + i * NMS_CLASS_OFFSET, b[3] + i * NMS_CLASS_OFFSET]
+        for b, i in zip(boxes, ids)
+    ]
+    idx = cv2.dnn.NMSBoxes(
+        [[b[0], b[1], b[2] - b[0], b[3] - b[1]] for b in shifted],
+        scores, score_thr, nms_thr)
+    return np.array(idx).flatten().tolist() if len(idx) else []
+
+
+def drop_marks_under_blocks(boxes, ids, keep, mark_cids, overlap_thr):
+    """block_only 策略：标靶框被物块框覆盖时丢弃标靶框，只留物块框。
+
+    覆盖率 = 交集面积 / 较小框面积（物块压在标靶上时接近 1），
+    比 IoU 更适合"小框在大框内部"的几何。
+    """
+    kept = []
+    for k in keep:
+        if ids[k] in mark_cids:
+            a = boxes[k]
+            covered = False
+            for j in keep:
+                if ids[j] in mark_cids:
+                    continue
+                b = boxes[j]
+                ix1, iy1 = max(a[0], b[0]), max(a[1], b[1])
+                ix2, iy2 = min(a[2], b[2]), min(a[3], b[3])
+                inter = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+                smaller = min((a[2] - a[0]) * (a[3] - a[1]),
+                              (b[2] - b[0]) * (b[3] - b[1]))
+                if smaller > 0 and inter / smaller >= overlap_thr:
+                    covered = True
+                    break
+            if covered:
+                continue
+        kept.append(k)
+    return kept
+
+
 class ObjDnnNode(Node):
     def __init__(self, name="obj_dnn"):
         super().__init__(name)
@@ -64,6 +131,10 @@ class ObjDnnNode(Node):
         self.declare_parameter("msg_pub_topic_name", "hobot_dnn_detection")
         self.declare_parameter("score_threshold", 0.25)
         self.declare_parameter("nms_threshold", 0.45)
+        self.declare_parameter("mark_block_policy", "block_only")
+        self.declare_parameter("mark_block_overlap", 0.5)
+        self.declare_parameter("color_balance_rgb", [1.0, 1.0, 1.0])
+        self.declare_parameter("color_balance_file", "")
 
         self.score_thr = float(self.get_parameter("score_threshold").value)
         self.nms_thr = float(self.get_parameter("nms_threshold").value)
@@ -71,9 +142,23 @@ class ObjDnnNode(Node):
         names_file = self.get_parameter("cls_names_list").value
         image_topic = self.get_parameter("image_topic").value
         pub_topic = self.get_parameter("msg_pub_topic_name").value
+        calibration_file = self.get_parameter("color_balance_file").value
+        if calibration_file:
+            calibration = json.loads(Path(calibration_file).read_text(encoding="utf-8"))
+            gains = [float(value) for value in calibration["rgb_gains"]]
+            color_balance_lut(gains)
+            self.set_parameters([Parameter("color_balance_rgb", value=gains)])
+        rgb_gains = self.get_parameter("color_balance_rgb").value
+        self.color_lut = color_balance_lut(rgb_gains)
+        self.add_on_set_parameters_callback(self.set_color_balance_parameters)
+        self.get_logger().info("input color balance R/G/B=%s" % list(rgb_gains))
 
         with open(names_file) as f:
             self.names = [l.strip() for l in f if l.strip()]
+        self.mark_policy = str(self.get_parameter("mark_block_policy").value)
+        self.mark_overlap = float(self.get_parameter("mark_block_overlap").value)
+        # 放置区标识类（targetOne/Two/Three），其余为物块类
+        self.mark_cids = {i for i, n in enumerate(self.names) if n.startswith("target")}
 
         self.get_logger().info(f"loading model: {model_file}")
         self.model = dnn.load(model_file)[0]
@@ -103,8 +188,19 @@ class ObjDnnNode(Node):
         self._t_last = time.time()
         self._log_once = False
         self.get_logger().info(
-            "obj_dnn ready: sub=%s pub=%s score=%.2f nms=%.2f"
-            % (image_topic, pub_topic, self.score_thr, self.nms_thr))
+            "obj_dnn ready: sub=%s pub=%s score=%.2f nms=%.2f mark_policy=%s"
+            % (image_topic, pub_topic, self.score_thr, self.nms_thr, self.mark_policy))
+
+    def set_color_balance_parameters(self, parameters):
+        next_lut = self.color_lut
+        for parameter in parameters:
+            if parameter.name == "color_balance_rgb":
+                try:
+                    next_lut = color_balance_lut(parameter.value)
+                except (TypeError, ValueError) as error:
+                    return SetParametersResult(successful=False, reason=str(error))
+        self.color_lut = next_lut
+        return SetParametersResult(successful=True)
 
     @staticmethod
     def _dfl(box):
@@ -136,6 +232,8 @@ class ObjDnnNode(Node):
             return
         H0, W0 = frame.shape[:2]
 
+        if self.color_lut is not None:
+            frame = cv2.LUT(frame, self.color_lut)
         resized = cv2.resize(frame, (self.in_w, self.in_h), interpolation=cv2.INTER_AREA)
         outs = self.model.forward(bgr2nv12(resized))
         t1 = time.time()
@@ -186,13 +284,10 @@ class ObjDnnNode(Node):
                 scores.append(float(csc[ys[i], xs[i]]))
                 ids.append(int(cid[ys[i], xs[i]]))
 
-        keep = []
-        if boxes:
-            idx = cv2.dnn.NMSBoxes(
-                [[b[0], b[1], b[2] - b[0], b[3] - b[1]] for b in boxes],
-                scores, self.score_thr, self.nms_thr)
-            if len(idx):
-                keep = np.array(idx).flatten().tolist()
+        keep = class_aware_nms(boxes, scores, ids, self.score_thr, self.nms_thr)
+        if self.mark_policy == "block_only":
+            keep = drop_marks_under_blocks(
+                boxes, ids, keep, self.mark_cids, self.mark_overlap)
 
         # 模型坐标 -> 图像坐标
         sx, sy = W0 / float(self.in_w), H0 / float(self.in_h)

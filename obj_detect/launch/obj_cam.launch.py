@@ -1,7 +1,8 @@
 import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import IncludeLaunchDescription
+from launch.actions import GroupAction, IncludeLaunchDescription
+from launch_ros.actions import SetParameter
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python import get_package_share_directory
 
@@ -60,6 +61,10 @@ def generate_launch_description():
             usb_image_height,
             usb_framerate,
             
-            cap_objdet_node,
+            # Apply only inside the object-camera launch scope. The vendor
+            # camera node otherwise defaults to brightness=50.
+            GroupAction(
+                actions=[SetParameter(name="brightness", value=0), cap_objdet_node]
+            ),
         ]
     )

@@ -1,4 +1,5 @@
-"""Record only live frames and close AVI indexes on rotation and shutdown."""
+"""Record only live frames, close AVI indexes on rotation and shutdown, and
+keep only the newest video_archive_keep archives."""
 
 import datetime
 import os
@@ -23,9 +24,13 @@ class ObjVidDumper(Node):
         self.declare_parameter("video_fourcc", "MJPG")
         self.declare_parameter("video_update_time", 20)
         self.declare_parameter("video_packup_time", 120)
+        self.declare_parameter("video_archive_keep", 2)
         if self.get_parameter("video_fps").value <= 0:
             raise ValueError("video_fps must be positive")
+        if self.get_parameter("video_archive_keep").value < 1:
+            raise ValueError("video_archive_keep must be at least 1")
         os.makedirs(self.get_parameter("video_dir").value, exist_ok=True)
+        self.prune_archives()
         self.video_fn = None
         self.video_fd = None
         self._next_write = 0.0
@@ -102,6 +107,21 @@ class ObjVidDumper(Node):
             return
         for video in videos:
             os.remove(video)
+        self.prune_archives()
+
+    def prune_archives(self):
+        # Archives accumulate at ~60 MB per packup interval; without pruning
+        # the root partition fills within roughly two hours of recording.
+        keep = self.get_parameter("video_archive_keep").value
+        archives = sorted(
+            glob(os.path.join(self.get_parameter("video_dir").value, "*.tar.gz")),
+            key=os.path.getmtime, reverse=True)
+        for old in archives[keep:]:
+            try:
+                os.remove(old)
+                self.get_logger().info(f"Pruned old archive: {os.path.basename(old)}")
+            except OSError as error:
+                self.get_logger().error(f"ARCHIVE_PRUNE_FAILED: {old}: {error}")
 
 
 def main(args=None):

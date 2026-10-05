@@ -5,30 +5,32 @@
 基于 ROS2 Humble 的智能搬运机器人视觉子系统，运行于地瓜 RDK X5（`/root/dev_ws/appli`），
 配套 2027 浙江省工创大赛智能搬运赛项。校赛入口依次执行**障碍物预扫描、二维码发送、物块识别**，
 `framework/school_profile.json` 已设置 `object_scan_enabled: true`。
-检测结果经串口（`ttyS1@115200`）下发下位机执行。校赛配置和验证边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md)。
+检测结果经串口（`ttyS1@115200`）下发下位机执行。校赛配置和验证边界见 [SCHOOL_RUNBOOK.md](docs/SCHOOL_RUNBOOK.md)。
 
-当前启停区 1 的障碍 ROI 由两组六张照片的新版标注融合，三角度并集覆盖候选点 1–13。候选点 13 对应地图 ID 23、网格 `(4,3)`，在 45° 和 90° 有 ROI；这不表示组委会已公布固定障碍位置。标注来源、复现命令及现场验收边界见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#障碍-roi-覆盖与复核)。
+当前启停区 1 的障碍 ROI 由两组六张照片的新版标注融合，三角度并集覆盖候选点 1–13。候选点 13 对应地图 ID 23、网格 `(4,3)`，在 45° 和 90° 有 ROI；这不表示组委会已公布固定障碍位置。标注来源、复现命令及现场验收边界见 [SCHOOL_RUNBOOK.md](docs/SCHOOL_RUNBOOK.md#障碍-roi-覆盖与复核)。
 
 ## 1. 快速开始
 
 ```bash
-# 按完整配置检查三路相机、串口和模型
-bash /root/dev_ws/appli/start_new.sh --check
+# 完整启动：先检查，再等待 [4] 或 [24] 与三次 [shot]
+bash /root/dev_ws/appli/start_all.sh --check
+bash /root/dev_ws/appli/start_all.sh 30
 
-# 执行当前链路；先等下位机 [4] 或 [24]，再等三次 [shot]
-bash /root/dev_ws/appli/start_new.sh 30
+# 简化启动：直接从二维码开始，扫码后继续物块识别
+bash /root/dev_ws/appli/start_simple.sh --check
+bash /root/dev_ws/appli/start_simple.sh
 
-# 已安装的服务入口与上述脚本一致，确需服务运行时执行
+# 已安装的服务入口使用完整启动
 systemctl start appli.service
-
-# 或直接运行启动脚本（等价）
-bash /usr/local/bin/appli.sh
-
-# 仅调试二维码与物块阶段时使用
-ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
 ```
 
-启动链路：`appli.service` → `/usr/local/bin/appli.sh` → `start_new.sh` → `prescan_main.py` → `run_all.launch.py`。
+两个入口启动时均先自动停止当前项目（包括开机服务和前台启动的旧任务），确认退出后再启动所选流程，无需先手动停止。开机服务调用入口时保留自身服务。
+`start_all.sh` 的 `30` 是等待每条预扫描指令的超时秒数，缺省为 30。`start_simple.sh` 不等待启停帧或 `[shot]`，也不发送障碍地图。
+两者共用 `scripts/start_common.sh`，自动加载 TROS 与工作区环境。`--check` 只检查对应流程的设备、模型及环境脚本，不启动节点；`--help` 查看用法。
+`object_scan_enabled: true` 时扫码后进入物块识别；设为 `false` 时两个入口均在扫码发送后结束。`APPLI_SERIAL_DEVICE` 默认 `/dev/ttyS1`；`APPLI_SCHOOL_PROFILE` 可指定临时配置。
+
+完整链路：`appli.service` → `start_all.sh` → `prescan_main.py` → `run_all.launch.py`。
+简化链路：`start_simple.sh` → `run_all.launch.py`。旧 `start_new.sh` / `start_old.sh` 已统一替换；兼容服务包装 `service/appli.sh` 指向 `start_all.sh`。
 二维码四帧写入串口并刷新后发布 `/qrc_forwarded`；扫码相机释放后再启动物块相机。
 物块检测框面积默认小于 **2000 像素²** 的目标被剔除，网页和串口均使用过滤结果，见 [面积过滤说明](obj_detect/AREA_FILTER.md)。
 默认推理引擎为已验证的 `workaround`；备用 `native` 当前存在既有实拍推理崩溃，节点失败会终止完整流程并清理资源。
@@ -36,7 +38,7 @@ ros2 launch /root/dev_ws/appli/launch/run_all.launch.py
 录像只在收到实际图像后创建，轮转、打包和退出时关闭 AVI；停止任务同时关闭物块相机子进程。
 预扫描失败会退出，不会自动进入二维码阶段。当前校赛状态以 `SCHOOL_RUNBOOK.md` 为准。
 
-可复现的板端自动联调：按 [校赛验收说明](SCHOOL_RUNBOOK.md#完整流程自动联调) 运行 `tools/verify_full_flow.py`。
+可复现的板端自动联调：按 [校赛验收说明](docs/SCHOOL_RUNBOOK.md#完整流程自动联调) 运行 `tools/verify_full_flow.py`。
 
 ## 历史开发记录
 
@@ -76,18 +78,23 @@ launch/run_all.launch.py
 
 ```
 appli/
-├── launch/run_all.launch.py     # 一键启动（obj_detect + qrc_skandier）
+├── start_all.sh                 # 完整流程：障碍预扫描 → 二维码 → 物块
+├── start_simple.sh              # 简化流程：二维码 → 物块
+├── scripts/                     # 共用停止、环境、参数和设备检查
+├── docs/                        # 赛前运行说明、待办、模型导出问题
+├── launch/                      # 二维码/物块阶段的 ROS launch
 ├── obj_detect/                  # 目标检测包（obj_camd / obj_serial / obj_video_dumper）
 ├── qrc_skandier/                # 二维码包（qrc_cam / qrc_scanner / qrc_cam_killer / flaskr）
 ├── qrc_hobot_usb_cam/           # USB 相机 ROS2 包装（C++）
 ├── dnn/                         # 模型资产：原任务 yolov5s_v5s_672 + yolov11 9 类物块/标识（task_obj_v11.json）
 │                                # 物块双链路：yolo11_x5.bin（NCHW/workaround）+ yolo11_x5_nhwc.bin（NHWC/native）+ task_obj_v11{,_nhwc}.json
-├── framework/dnn/               # 【新增】全局扫描 1 类 ball yolo + task_obj_obstacle.json
-├── service/                     # appli.service + appli.sh（自启链路）
+├── framework/                   # 障碍预扫描、通信、校赛配置；dnn/ 存障碍模型与 ROI
+├── service/                     # systemd 完整启动与兼容包装
 ├── gpio_shutdown/               # GPIO 关机键服务
-├── other/                       # 辅助 launch/脚本
-├── framework/                   # 【新增】避障预扫描框架（通信完成、识别待实现；见 §6）
-└── _tmp_videos/                 # 检测录像输出
+├── tools/                       # 构建、板端验证；diagnostics/ 调试，legacy/ 历史工具
+├── webapp/                      # OpenCV 参数调节网页
+├── _tmp_scan_imgs/              # 运行时预扫描照片（不入版本管理）
+└── _tmp_videos/                 # 运行时检测录像（不入版本管理）
 ```
 
 ## 4. 串口协议（上位机 → 下位机，ttyS1 @ 115200）
@@ -240,7 +247,7 @@ is_start_frame）+ `framework/mission_dispatcher.py`
 物块任务推荐先试 `dnn/yolo11_x5_nhwc.bin`（native 链）——TROS 自带 `dnn_node_example` 能直吃，无须额外节点；现场先跑通 native，确认精度后再决定是否下线 workaround。
 
 
-当前校赛 ROI 已根据六张照片的重标数据更新；实际覆盖与复核要求见 [SCHOOL_RUNBOOK.md](SCHOOL_RUNBOOK.md#障碍-roi-覆盖与复核)。本节其他早期标注进度不代表运行文件。
+当前校赛 ROI 已根据六张照片的重标数据更新；实际覆盖与复核要求见 [SCHOOL_RUNBOOK.md](docs/SCHOOL_RUNBOOK.md#障碍-roi-覆盖与复核)。本节其他早期标注进度不代表运行文件。
 
 
 ## 7. 物块双链路切换 & 单删指南（2026-09-29）

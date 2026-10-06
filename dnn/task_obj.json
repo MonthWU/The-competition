@@ -1,0 +1,13 @@
+{
+	"model_file": "/root/dev_ws/appli/dnn/250720_v5s_672.bin",
+	"model_name": "250720_v5s_672",
+	"dnn_Parser": "yolov5x",
+	"model_output_count": 3,
+	"class_num": 6,
+	"cls_names_list": "/root/dev_ws/appli/dnn/gz_1110.list",
+	"strides": [8, 16, 32],
+	"anchors_table": [[[10, 13], [16, 30], [33, 23]], [[30, 61], [62, 45], [59, 119]], [[116, 90], [156, 198], [373, 326]]],
+	"score_threshold": 0.8,
+	"nms_threshold": 0.6,
+	"nms_top_k": 5000
+}

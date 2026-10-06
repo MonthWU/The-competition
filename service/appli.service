@@ -1,0 +1,15 @@
+[Unit]
+Description=Contesta Hexagonna Videa al RDKx5
+
+[Service]
+Type=simple
+
+User=root
+
+ExecStart=/usr/local/bin/appli.sh
+
+PrivateTmp=true
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

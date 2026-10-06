@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""障碍物预扫描阶段入口（供 start_new.sh 调用）。
+"""障碍物预扫描阶段入口（供 start_all.sh 调用）。
 
 流程（协议 v3，见 README §6.1）：
   等串口 [num]（启停位置）→ 回 [ack]

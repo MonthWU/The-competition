@@ -32,7 +32,7 @@ def prescan_case(name, payload, marker):
     env.pop("APPLI_SCHOOL_PROFILE", None)
     log_path = OUT / (name + ".log")
     with log_path.open("wb") as log:
-        process = subprocess.Popen(["bash", str(ROOT / "start_new.sh"), "2"],
+        process = subprocess.Popen(["bash", str(ROOT / "start_all.sh"), "2"],
                                    env=env, stdout=log, stderr=subprocess.STDOUT,
                                    start_new_session=True)
         try:

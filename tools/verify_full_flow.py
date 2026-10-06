@@ -142,7 +142,7 @@ try:
     environment = os.environ.copy()
     environment.update(APPLI_SCHOOL_PROFILE=profile_path, APPLI_SERIAL_DEVICE=device)
     log = open(OUT + "/entry.log", "wb")
-    process = subprocess.Popen(["bash", ROOT + "/start_new.sh", "30"],
+    process = subprocess.Popen(["bash", ROOT + "/start_all.sh", "30"],
                                env=environment, stdout=log, stderr=subprocess.STDOUT,
                                start_new_session=True)
     state["entry_pid"] = process.pid

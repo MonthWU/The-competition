@@ -8,7 +8,7 @@ User=root
 Environment=ROS_HOME=/root/.ros
 Environment=ROS_LOG_DIR=/root/.ros/log
 
-ExecStart=/usr/local/bin/appli.sh
+ExecStart=/bin/bash /root/dev_ws/appli/start_all.sh
 
 PrivateTmp=true
 KillMode=control-group

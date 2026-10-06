@@ -120,6 +120,9 @@ def generate_launch_description():
     minimum_area_arg = DeclareLaunchArgument(
         "min_target_area_px", default_value=TextSubstitution(text="2000"),
         description="Minimum target box width * height in original image pixels squared; 0 disables size filtering")
+    max_center_y_arg = DeclareLaunchArgument(
+        "max_center_y_ratio", default_value=TextSubstitution(text="0.5"),
+        description="检测框中心 y 超过该比例×图高按车体误检丢弃（画面下方常驻车体/机械爪）；1.0 关闭")
     raw_detection_topic = PythonExpression([
         "'", LaunchConfiguration("msg_pub_topic_name"), "_raw'"
     ])
@@ -209,6 +212,8 @@ def generate_launch_description():
             "input_topic": raw_detection_topic,
             "output_topic": LaunchConfiguration("msg_pub_topic_name"),
             "min_target_area_px": LaunchConfiguration("min_target_area_px"),
+            "max_center_y_ratio": LaunchConfiguration("max_center_y_ratio"),
+            "image_height": LaunchConfiguration("dnn_example_image_height"),
         }],
         output="screen",
     )
@@ -323,7 +328,7 @@ def generate_launch_description():
         cap_objdet_dev_arg, cap_qrc_dev_arg, serial_device_arg,
         engine_arg, camera_daemon_arg,
         image_width_launch_arg, image_height_launch_arg, msg_pub_topic_name_launch_arg,
-        minimum_area_arg,
+        minimum_area_arg, max_center_y_arg,
         workaround_model_arg, workaround_names_arg,
         workaround_score_arg, workaround_nms_arg,
         native_task_json_arg, native_dump_render_arg,

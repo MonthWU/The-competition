@@ -1,4 +1,6 @@
-# 启停区 1 障碍 ROI 标注与拟合
+# 两个启停区共用的障碍 ROI 标注与拟合
+
+用户已确认启停区 `[4]`、`[24]` 使用同一组数据。`school_profile.json` 通过 `roi_start_ids: [4,24]` 指向唯一的 `merged_runtime.json`；运行时不复制、不镜像或旋转标定多边形，两个起点使用相同候选点映射。原始照片与点列来源保留如下。
 
 2026-09-29 的 `source_annotations.json` 保存用户重新标注的两组 0°、45°、90° 图像点列，分别对应 `angle_pic1/2/3.jpg` 和 `angle_pic1b/2b/3b.jpg`。这六张照片在板端 `/root/dev_ws/appli/_tmp_scan_imgs/`，可在需要时生成叠加总览；仓库只保存标注数据和代码。旧的第一组标注有误，已从当前文件集移除。
 

@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "service": {
+    "MainPID": "11694",
+    "NRestarts": "0",
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "initial_start_wait": "indefinite",
+  "shot_timeout_seconds": 30,
+  "observed_seconds": 36,
+  "enabled": "enabled",
+  "functional_tests": {
+    "tests": 44,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "backup": "/root/dev_ws/RDK_CJLU_V09_autostart_20261004"
+}

@@ -1,0 +1,94 @@
+{
+  "deployment": {
+    "backup": "/root/dev_ws/RDK_CJLU_V08_startup_20261004",
+    "deployed_files": 28,
+    "sha256_verified": true,
+    "runtime_packages_models_roi_profile_unchanged": true,
+    "retired_paths": [
+      "start_new.sh",
+      "start_old.sh",
+      "SCHOOL_RUNBOOK.md",
+      "TODO.md",
+      "MODEL_EXPORT_FORMAT_ISSUE.md",
+      "cb",
+      "ge.py",
+      "gf.py",
+      "test_zbar.py",
+      "startup.bash",
+      "recover.sh",
+      "other"
+    ]
+  },
+  "passed": true,
+  "tests": {
+    "full": {
+      "passed": true,
+      "checks": {
+        "four_prescan_acks": true,
+        "one_map_frame": true,
+        "three_scan_images": true,
+        "three_scan_inference": true,
+        "qr_camera_image": true,
+        "qr_result": true,
+        "one_kill": true,
+        "four_qr_serial_notifications": true,
+        "four_qr_uart_frames": true,
+        "fixture_object_uart": true,
+        "object_camera_image": true,
+        "object_inference": true,
+        "small_object_targets_filtered": true,
+        "object_serial_notifications": true,
+        "full_entry_stays_running": true,
+        "recording_created": true,
+        "web_http": true,
+        "websocket_image_payload": true,
+        "all_videos_closed_and_readable": true
+      }
+    },
+    "simple": {
+      "passed": true,
+      "checks": {
+        "no_start_or_shot_sent": true,
+        "four_qr_uart_frames": true,
+        "no_prescan_ack_or_map": true,
+        "one_handoff": true,
+        "real_qr_images": true,
+        "real_object_images": true,
+        "entry_stays_running": true,
+        "skips_prescan_stage": true
+      }
+    },
+    "guards": {
+      "passed": true,
+      "checks": {
+        "missing_start_blocks_main": true,
+        "uncalibrated_start_24_blocks_main": true,
+        "node_failure_stops_full_launch": true
+      }
+    }
+  },
+  "ros_packages": [
+    "obj_detect",
+    "qrc_hobot_usb_cam",
+    "qrc_skandier"
+  ],
+  "package_discovery_unchanged": true,
+  "remaining_project_processes": [],
+  "camera_uart_users": "",
+  "formal_profile": {
+    "expected_obstacle_count": 1,
+    "object_scan_enabled": true,
+    "fixed_obstacle_id": null,
+    "roi_start_id": 4,
+    "roi_file": "dnn/obstacle_roi/merged_runtime.json",
+    "minimum_detection_frames": 2,
+    "minimum_winner_share": 0.7
+  },
+  "service": "ExecStart={ path=/bin/bash ; argv[]=/bin/bash /root/dev_ws/appli/start_all.sh ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }\nActiveState=inactive\nUnitFileState=enabled\n",
+  "functional_unit_tests_before_commit": {
+    "tests": 39,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

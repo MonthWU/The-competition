@@ -1,0 +1,39 @@
+{
+  "transport": "PTY simulated MCU",
+  "entry": "start_all.sh",
+  "command": "[skip]",
+  "checks": {
+    "skip_received": true,
+    "no_transition_until_frame_complete": true,
+    "skip_marker": true,
+    "qr_stage_started": true,
+    "real_qr_camera_images": true,
+    "no_prescan_ack": true,
+    "no_map_frame": true,
+    "obstacle_camera_not_opened": true,
+    "no_obstacle_launch": true,
+    "entry_stays_running": true
+  },
+  "passed": true,
+  "images": {
+    "qr": 5,
+    "obstacle": 0
+  },
+  "wire_hex": "",
+  "unit_tests": {
+    "tests": 58,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "failure_guards": {
+    "checks": {
+      "missing_start_blocks_main": true,
+      "uncalibrated_start_24_blocks_main": true,
+      "node_failure_stops_full_launch": true
+    },
+    "passed": true
+  },
+  "backup": "/root/dev_ws/RDK_CJLU_V10_skip_20261004",
+  "service": "MainPID=19968\nActiveState=active\nUnitFileState=enabled\n"
+}

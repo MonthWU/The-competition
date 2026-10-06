@@ -1,18 +1,19 @@
 # framework/ —— 智能搬运校赛预扫描设计
 
-## 当前实现（2026-09-29）
+## 当前实现（2026-10-04）
 
-校赛以 [SCHOOL_RUNBOOK.md](../SCHOOL_RUNBOOK.md) 和 `school_profile.json` 为运行依据。本节描述当前代码；下方“历史设计记录”保留早期方案，不代表现行实现。
+校赛以 [SCHOOL_RUNBOOK.md](../docs/SCHOOL_RUNBOOK.md) 和 `school_profile.json` 为运行依据。本节描述当前代码；下方“历史设计记录”保留早期方案，不代表现行实现。
 
 - RDK 负责三角度视觉采集、障碍定位、地图帧与扫码阶段串口通信；云台和运动由下位机负责。
-- `start_new.sh` 先运行 `prescan_main.py`，预扫描成功后按 `object_scan_enabled` 选择 `run_qr_only.launch.py` 或 `run_all.launch.py`。当前物块相机损坏，配置为 `false`，运行到二维码扫描结束。
+- `start_all.sh` 先运行 `prescan_main.py`，预扫描成功后进入二维码阶段；`start_simple.sh` 直接从二维码开始。两者共用 `scripts/start_common.sh`，按 `object_scan_enabled` 选择 `run_qr_only.launch.py` 或 `run_all.launch.py`；当前配置为 `true`，扫码发送后继续物块识别。
+- 初始启停帧可为 `[skip]`：不采图、定位或发送预扫描 ACK/地图，关闭 UART 后直接转二维码阶段。数字起点才检查障碍资源；`--check` 仍检查完整链路资源。
 - 预扫描串口独占 `/dev/ttyS1`，按 `[4]` 或 `[24]`、`[ack]`、三次 `[shot]`/`[ack]`、一帧单障碍地图的顺序工作；扫码阶段在串口释放后接管。
 - 每次 `[shot]` 由下位机完成云台转角后发送。`mission_dispatcher.py` 启动 `prescan.launch.py`，DCXIN 以 1280×720 采图，`obs_dnn.py` 用单类 `block` 模型推理，`prescan_dnn_node.py` 提供检测框和留档画面。固定位置模式也完成三次采图。
-- `obstacle_locator.py` 根据 `school_profile.json` 选择固定地图 ID 或启停区 1 的像素 ROI。2026-09-29 六图重标后，运行 ROI 的角度并集覆盖候选点 1–13；候选点 13 对应网格 `(4,3)`、地图 ID 23，在 45° 和 90° 可见。读取器支持三角形和四边形，原始标注及拟合脚本保存在 `framework/dnn/obstacle_roi/`。启停区 2 没有适用的 ROI；固定 ID 未公布时从 `[24]` 启动返回 `CALIBRATION_REQUIRED`。
+- `obstacle_locator.py` 根据 `school_profile.json` 选择固定地图 ID 或 `[4]`、`[24]` 共用的像素 ROI。2026-09-29 六图重标后，运行 ROI 的角度并集覆盖候选点 1–13；候选点 13 对应网格 `(4,3)`、地图 ID 23，在 45° 和 90° 可见。读取器支持三角形和四边形，原始标注及拟合脚本保存在 `framework/dnn/obstacle_roi/`。两个起点按 `roi_start_ids: [4,24]` 共用同一份三角度数据；不改变各自基线方向。
 - 地图 ID 使用零基行优先编号 `row*5+col`；校赛只接受一个障碍。未能定位或票数不足时不发地图，也不进入二维码阶段。运行配置中 `fixed_obstacle_id` 仍为 `null`。
-- 相机身份由 by-id 指定：DCXIN 用于障碍，KS1A293 用于二维码，LRCP AR0234 用于物块。当前只要求前两台和障碍模型；完整三阶段需先修复 LRCP。
+- 相机身份由 by-id 指定：DCXIN 用于障碍，KS1A293 用于二维码，LRCP AR0234 用于物块。当前完整入口要求三台相机和两套模型，简化入口要求后两台和物块模型。
 
-现有证据为归档照片的障碍模型推理、实机 DCXIN 与 KS1A293 加虚拟下位机和合成二维码的两阶段联调。真实赛场障碍、实际二维码和下位机真串口收帧尚未验收。若组委会公布固定障碍地图 ID，在 `school_profile.json` 填写该 ID 并重新启动；这不会自动补齐视觉 ROI。
+2026-10-04 已通过三阶段完整入口、简化入口和失败分支板端联调，使用三路真实相机、PTY 模拟下位机和测试图；结果见 [部署验证记录](../docs/verification/2026-10-04-startup.md)。真实赛场障碍、实际二维码和下位机电气收帧尚未验收。若组委会公布固定障碍地图 ID，在 `school_profile.json` 填写该 ID 并重新启动；这不会自动补齐视觉 ROI。
 
 ## 历史设计记录（2026-09-23，以下状态和模型名称可能已过时）
 

@@ -1,0 +1,70 @@
+{
+  "backup": "/root/dev_ws/RDK_CJLU_V11_shared_roi_20261004",
+  "configuration": {
+    "expected_obstacle_count": 1,
+    "object_scan_enabled": true,
+    "fixed_obstacle_id": null,
+    "roi_file": "dnn/obstacle_roi/merged_runtime.json",
+    "minimum_detection_frames": 2,
+    "minimum_winner_share": 0.7,
+    "roi_start_ids": [
+      4,
+      24
+    ]
+  },
+  "unit_tests": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "73",
+    "time": "4.539",
+    "timestamp": "2026-10-04T18:56:35.983755",
+    "hostname": "ubuntu"
+  },
+  "integration": {
+    "transport": "PTY simulated MCU; real cameras",
+    "profile_override": null,
+    "cases": [
+      {
+        "start_id": 4,
+        "passed": true,
+        "start_ack": true,
+        "shared_roi_ready": true,
+        "calibration_rejected": false,
+        "wire_hex": "5b 61 63 6b 5d",
+        "returncode_after_test_stop": -15
+      },
+      {
+        "start_id": 24,
+        "passed": true,
+        "start_ack": true,
+        "scan_0_ack": true,
+        "scan_image_paths": [
+          "/root/dev_ws/appli/_tmp_scan_imgs/scan_000_20261004_185651.jpg"
+        ],
+        "shared_roi_ready": true,
+        "calibration_rejected": false,
+        "scan_result": "[mission] SCAN_RESULT angle=0 frames=136 positive=0 image_saved=True log=/root/dev_ws/appli/_tmp_scan_imgs/prescan_000_20261004_185651.log",
+        "wire_hex": "5b 61 63 6b 5d 5b 61 63 6b 5d",
+        "returncode_after_test_stop": -15
+      }
+    ],
+    "passed": true
+  },
+  "guards": {
+    "checks": {
+      "missing_start_blocks_main": true,
+      "missing_roi_file_blocks_main": true,
+      "node_failure_stops_full_launch": true
+    },
+    "passed": true
+  },
+  "unchanged_calibration_sha256": {
+    "framework/dnn/obstacle_roi/merged_runtime.json": "f33bed4d73bf4803e1d4cc5f05bf26a0f807f8532a190cdfb21ed4b0a4656b55",
+    "framework/dnn/obstacle_roi/source_annotations.json": "67dfd3ae9558afc14524a17268f115057b26f16a6f5640c71bd717d7f34df120"
+  },
+  "service": "MainPID=25935\nNRestarts=0\nActiveState=active\nSubState=running\n",
+  "enabled": "enabled",
+  "acceptance_limit": "PTY handshake and one real 0-degree scan; no physical MCU motion or final obstacle map acceptance"
+}

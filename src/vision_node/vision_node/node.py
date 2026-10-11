@@ -19,9 +19,9 @@ class MJPEGHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             body = (
-                "<html><head><title>RDK_CJLU_26_V11</title></head>"
+                "<html><head><title>RDK_CJLU_26_VDone</title></head>"
                 "<body style='margin:0;background:#111;color:#eee;font-family:Arial;'>"
-                "<div style='padding:8px 12px'>RDK_CJLU_26_V11 Stream</div>"
+                "<div style='padding:8px 12px'>RDK_CJLU_26_VDone Stream</div>"
                 "<img src='/stream.mjpg' style='width:100%;max-width:1280px;display:block;margin:0 auto;' />"
                 "</body></html>"
             ).encode("utf-8")
@@ -101,7 +101,7 @@ class VisionNode(Node):
         self.loop_hz = max(1.0, min(self.loop_hz, 120.0))
         self.debug_save_enable = bool(CAMERA.get('debug_save_enable', False))
         self.debug_save_interval_sec = float(CAMERA.get('debug_save_interval_sec', 0.5))
-        self.project_root = '/root/Monthwu/RDK_vision/RDK_CJLU_26_V11'
+        self.project_root = '/root/Monthwu/RDK_vision/RDK_CJLU_26_VDone'
         self.stream_host = CAMERA.get('stream_host', '192.168.1.125')
 
         self.target_pub = self.create_publisher(String, '/vision/target', 10)
@@ -121,7 +121,7 @@ class VisionNode(Node):
         self._last_debug_save_ts = 0.0
 
         self.get_logger().info(
-            f'RDK_CJLU_26_V11 vision node started '
+            f'RDK_CJLU_26_VDone vision node started '
             f'(YOLO enabled={self.pipeline.yolo.enabled}, target=d,a_x, loop_hz={self.loop_hz:.1f})'
         )
         self._laser_set(True)
@@ -195,11 +195,7 @@ class VisionNode(Node):
         mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
         mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
         mask = cv2.bitwise_or(mask1, mask2)
-        k = int(RED_CIRCLE.get('morph_kernel', 5))
-        if k % 2 == 0:
-            k += 1
-        k = max(3, k)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (int(RED_CIRCLE.get('morph_kernel', 5)), int(RED_CIRCLE.get('morph_kernel', 5))))
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
@@ -207,15 +203,14 @@ class VisionNode(Node):
         if not contours:
             return None
 
-        best = None
-        best_score = -1.0
         img_cx = w / 2.0
-        ref_distance_cm = float(RED_CIRCLE.get('reference_distance_cm', 250.0))
-        ref_diameter_px = float(RED_CIRCLE.get('reference_diameter_px', 80.0))
-        real_diameter_cm = float(RED_CIRCLE.get('real_diameter_cm', 6.0))
-        focal_length_mm = float(RED_CIRCLE.get('focal_length_mm', 2.8))
+        ref_distance_cm = float(RED_CIRCLE.get('reference_distance_cm', 175.5))
+        ref_diameter_px = float(RED_CIRCLE.get('reference_diameter_px', 52.1))
+        real_diameter_cm = float(RED_CIRCLE.get('real_diameter_cm', 20.0))
+        focal_length_mm = float(RED_CIRCLE.get('focal_length_mm', 3.24))
         pixel_size_um = float(RED_CIRCLE.get('pixel_size_um', 3.0))
         distance_model = str(RED_CIRCLE.get('distance_model', 'ellipse_minor_reference'))
+        distance_bias_cm = float(RED_CIRCLE.get('distance_bias_cm', 0.0))
         use_minor_axis_as_diameter = bool(RED_CIRCLE.get('use_minor_axis_as_diameter', True))
         min_area = float(RED_CIRCLE.get('min_area', 120))
         min_radius_px = float(RED_CIRCLE.get('min_radius_px', 6.0))
@@ -226,11 +221,12 @@ class VisionNode(Node):
         if pixel_size_um > 1e-6:
             focal_px = focal_length_mm / (pixel_size_um / 1000.0)
 
+        best = None
+        best_score = -1.0
         for cnt in contours:
             area = cv2.contourArea(cnt)
             if area < min_area:
                 continue
-
             (cx, cy), radius = cv2.minEnclosingCircle(cnt)
             if radius < min_radius_px:
                 continue
@@ -243,11 +239,10 @@ class VisionNode(Node):
             angle = 0.0
             if use_fit_ellipse and len(cnt) >= ellipse_min_points:
                 try:
-                    (ecx, ecy), (ew, eh), eangle = cv2.fitEllipse(cnt)
-                    cx, cy = ecx, ecy
-                    major = max(float(ew), float(eh))
-                    minor = min(float(ew), float(eh))
-                    angle = float(eangle)
+                    ellipse = cv2.fitEllipse(cnt)
+                    (_, _), (axis1, axis2), angle = ellipse
+                    major = max(axis1, axis2)
+                    minor = min(axis1, axis2)
                 except Exception:
                     pass
 
@@ -265,6 +260,7 @@ class VisionNode(Node):
                     distance = (real_diameter_cm * focal_px) / effective_diameter_px
                 else:
                     distance = ref_distance_cm * (ref_diameter_px / effective_diameter_px)
+                distance = max(0.0, distance + distance_bias_cm)
                 best = {
                     'cx': float(gx),
                     'cy': float(gy),
@@ -284,32 +280,30 @@ class VisionNode(Node):
             return frame
         vis = frame.copy()
         h, w = vis.shape[:2]
+
         center_x = w // 2
         cv2.line(vis, (center_x, 0), (center_x, h - 1), (255, 255, 0), 1)
 
+        if result is not None and result.get('yolo_roi') is not None:
+            rx1, ry1, rx2, ry2 = [int(v) for v in result['yolo_roi']]
+            cv2.rectangle(vis, (rx1, ry1), (rx2, ry2), (0, 255, 255), 2)
+            cv2.putText(vis, 'YOLO ROI', (rx1, max(18, ry1 - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+
         cv2.putText(
             vis,
-            f'FPS: {self.current_fps:.1f}',
+            f'FPS={self.current_fps:.1f}',
             (12, 26),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
+            0.65,
+            (0, 255, 0),
             2,
         )
 
         if target is not None:
             cx = int(target['cx'])
             cy = int(target['cy'])
-            if target.get('ellipse_major', 0.0) > 0 and target.get('ellipse_minor', 0.0) > 0:
-                axes = (
-                    max(1, int(target['ellipse_major'] / 2.0)),
-                    max(1, int(target['ellipse_minor'] / 2.0)),
-                )
-                cv2.ellipse(vis, (cx, cy), axes, target.get('ellipse_angle', 0.0), 0, 360, (0, 0, 255), 2)
-            else:
-                radius = int(target['radius'])
-                cv2.circle(vis, (cx, cy), radius, (0, 0, 255), 2)
-
+            radius = int(target['radius'])
+            cv2.circle(vis, (cx, cy), radius, (0, 0, 255), 2)
             cv2.putText(
                 vis,
                 f'distance={target["distance"]:.1f}cm vision_x={target["vision_x"]:.1f}',
@@ -331,6 +325,9 @@ class VisionNode(Node):
         return vis
 
     def loop(self):
+        if not rclpy.ok():
+            return
+
         ok, frame = self.cam.read()
         result = None
         target = None
@@ -354,9 +351,14 @@ class VisionNode(Node):
         with self.last_vis_lock:
             self.last_vis_frame = vis_frame
 
+        if not rclpy.ok():
+            return
         msg = String()
         msg.data = f'{d:.4f},{a_x:.4f}'
-        self.target_pub.publish(msg)
+        try:
+            self.target_pub.publish(msg)
+        except Exception:
+            return
 
         self.frame_count += 1
         now = time.time()
@@ -364,7 +366,7 @@ class VisionNode(Node):
             self.current_fps = self.frame_count / (now - self.last_t)
             h, w = self.last_frame_shape
             self.get_logger().info(
-                f"V11: fps={self.current_fps:.1f}, res={w}x{h}, distance={d:.1f}, vision_x={a_x:.1f}, yolo={self.pipeline.yolo.enabled}"
+                f"VDone: fps={self.current_fps:.1f}, res={w}x{h}, distance={d:.1f}, vision_x={a_x:.1f}, yolo={self.pipeline.yolo.enabled}"
             )
             self.frame_count = 0
             self.last_t = now
@@ -389,9 +391,13 @@ def main():
     try:
         rclpy.spin(node)
     finally:
-        node.destroy_node()
         try:
-            rclpy.shutdown()
+            node.destroy_node()
+        except Exception:
+            pass
+        try:
+            if rclpy.ok():
+                rclpy.shutdown()
         except Exception:
             pass
 

@@ -1,5 +1,10 @@
 """USB Camera wrapper for RDK_25_E_006
 关键修正：只使用显式候选，不再自动扫 /dev/video*，避免反复误碰 /dev/video1 元数据节点
+
+systemd 场景额外修正：
+- 对 /dev/video* 候选，优先按设备路径直接打开；
+- 不再先把 /dev/video0 强制转换成 index 0，避免开机自启时 V4L2 by-index 打不开；
+- 数字候选（0/1/2）仍保留为兜底。
 """
 import os, re, time
 import cv2
@@ -25,7 +30,7 @@ class Camera:
             real = os.path.realpath(source)
             m = re.search(r'/dev/video(\d+)$', real)
             if m:
-                return int(m.group(1)), f'{source} -> {real}'
+                return real, f'{source} -> {real}'
         return source, str(source)
 
     def _candidate_list(self):

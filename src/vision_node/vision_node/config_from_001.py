@@ -32,7 +32,8 @@ CAMERA = {
 RED_CIRCLE = {
     "real_diameter_cm": 20.0,
     "reference_distance_cm": 175.5,
-    "reference_diameter_px": 60.8,
+    "reference_diameter_px": 52.1,
+    "distance_bias_cm": 30.0,
     "distance_model": "ellipse_minor_reference",
     "focal_length_mm": 3.24,
     "pixel_size_um": 3.0,

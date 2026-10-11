@@ -1,0 +1,271 @@
+# =========================
+# RDK_25_E1 全局配置
+# 说明：
+# - 保留 E1 的模块化结构；
+# - 功能逻辑按 RDK_25_E 标准版本实现；
+# - 核心流程：USB 摄像头 -> OpenCV 白框中心 -> 与固定 TARGET 比较 -> UART1 发给 STM32；
+# - IMU 接 UART3，解析 WIT/JY901 类 0x55 二进制帧，只透传 angle_z / speed_z 到 UART 数据包。
+# =========================
+
+# =========================
+# 摄像头配置
+# =========================
+CAMERA = {
+    "id": "/dev/video0",
+    "candidates": [
+        "/dev/video0",
+        "/dev/video1",
+        "/dev/video2",
+        0,
+        1,
+        2,
+    ],
+    "width": 640,
+    "height": 480,
+    "fps": 120,
+    "fourcc": "MJPG",
+    "force_resize": False,
+    "open_retry": 60,
+    "retry_interval_sec": 1.0,
+    "warmup_frames": 10,
+    "buffer_size": 1,
+    "web_port": 8000,
+}
+
+# =========================
+# 固定目标点配置
+# =========================
+TARGET = {
+    "center_x": 320 - 17,
+    "center_y": 240 + 3,
+    "use_last_frame_when_lost": True,
+    "default_frame_xy": (320, 240),
+    "invert_x": False,
+    "invert_y": False,
+    "lpf_alpha": 0.25,
+    "jump_filter_enable": True,
+    "jump_max_dx": 120,
+    "jump_max_dy": 120,
+    "jump_print_every": 10,
+    "prefer_laser_as_reference": False,
+    "require_laser_for_error": False,
+    "use_last_error_when_laser_lost": False,
+}
+
+# =========================
+# 实际尺寸与任务配置
+# =========================
+TASK = {
+    "real_width": 297.0 - 20,
+    "real_height": 210.0 - 20,
+    "send_when_lost": True,
+    "uart_send_hz": 200,
+    "pos_scale": 100,
+    "angle_scale": 100,
+    "speed_scale": 100,
+    "laser_on_error_pixel": 999999,
+    "loop_sleep_ms": 0,
+}
+
+# =========================
+# OpenCV 白框检测配置
+# =========================
+CV = {
+    "undistort_enable": False,
+    "camera_matrix": [
+        [600.0, 0.0, 320.0],
+        [0.0, 600.0, 240.0],
+        [0.0, 0.0, 1.0],
+    ],
+    "dist_coeffs": [-0.25, 0.08, 0.0, 0.0, 0.0],
+    "undistort_alpha": 1,
+    "roi_range": {
+        "x_min": 0.03,
+        "y_min": 0.03,
+        "x_max": 0.97,
+        "y_max": 0.97,
+    },
+    "white_adaptive_block_size": 13,
+    "white_adaptive_c": 3,
+    "approx_eps_ratio": 0.055,
+    "target_ratio": 100.0 / 60.0,
+    "ratio_min": 0.65,
+    "ratio_max": 3.60,
+    "min_short_side": 14,
+    "min_long_side": 22,
+    "max_side_ratio": 0.98,
+    "edge_margin": 0,
+    "white_denoise_kernel": 3,
+    "near_area_ratio": 0.06,
+    "near_side_ratio": 0.28,
+    "laser_detect_enable": False,
+    "laser_search_in_frame_box": False,
+    "laser_search_margin": 20,
+    "laser_strict_inside_frame": False,
+    "laser_inner_margin_px": 4,
+    "laser_mask_blue_inside_frame": False,
+    "laser_blue_h_min": 85,
+    "laser_blue_h_max": 140,
+    "laser_blue_s_min": 25,
+    "laser_blue_v_min": 35,
+    "laser_white_v_min": 180,
+    "laser_white_s_max": 130,
+    "laser_white_bgr_min": 195,
+    "laser_min_white_area": 1.0,
+    "laser_max_white_area": 650.0,
+    "laser_min_core_side": 2.0,
+    "laser_max_core_side": 36.0,
+    "laser_min_circularity": 0.20,
+    "laser_ring_expand": 18,
+    "laser_min_blue_pixels": 2,
+    "laser_min_blue_ratio": 0.002,
+    "laser_allow_blue_fallback": False,
+    "laser_min_blue_area": 6.0,
+    "laser_max_blue_area": 2500.0,
+    "laser_max_halo_side": 80.0,
+    "laser_blue_min_circularity": 0.08,
+    "laser_fallback_min_white_pixels": 2,
+    "laser_allow_white_core_fallback": False,
+    "laser_white_only_v_min": 218,
+    "laser_white_only_s_max": 160,
+    "laser_white_only_bgr_min": 190,
+    "laser_white_only_min_area": 1.0,
+    "laser_white_only_max_area": 120.0,
+    "laser_white_only_min_side": 1.0,
+    "laser_white_only_max_side": 20.0,
+    "laser_white_only_min_circularity": 0.08,
+    "laser_white_only_min_contrast": 8.0,
+    "laser_white_only_contrast_pad": 10,
+    "laser_white_only_morph_kernel": 1,
+    "laser_denoise_kernel": 3,
+    "laser_morph_kernel": 1,
+    "laser_debug": False,
+    "draw": True,
+    "debug": False,
+}
+
+# =========================
+# YOLO 粗定位配置
+# =========================
+YOLO = {
+    "enable": False,
+    "enabled": True,
+    "model_path": "/app/RDK_25_E/yolo/models/blank.bin",
+    "conf_thresh": 0.35,
+    "nms_thresh": 0.50,
+    "reg_max": 16,
+    "class_names": ["blank"],
+    "roi_margin": 45,
+    "min_area": 300,
+    "max_area_ratio": 0.90,
+    "min_wh": 8,
+    "detect_interval": 120,
+    "detect_period_sec": 1.0,
+    "debug": True,
+}
+
+# =========================
+# 激光 GPIO 配置
+# =========================
+LASER = {
+    "pin": 31,
+    "default_state": True,
+}
+
+LASER_SWITCH = {
+    "enabled": True,
+    "backend": "hobot_board",
+    "pin": LASER["pin"],
+    "default_state": LASER["default_state"],
+    "on_error_pixel": TASK["laser_on_error_pixel"],
+    "active_high": True,
+    "debug": False,
+}
+
+# =========================
+# UART 配置
+# =========================
+UART1 = {
+    "tx_pin": 8,
+    "rx_pin": 10,
+    "device": "/dev/ttyS1",
+    "baudrate": 115200,
+    "timeout": 0.01,
+    "write_timeout": 0.05,
+    "flush_after_write": False,
+    "enabled": True,
+    "debug": False,
+    "stats_enable": True,
+    "stats_interval_sec": 1.0,
+    "stats_print": False,
+    "rt_priority": 20,
+    "packet_mode": "e_packet_i32x5",
+    "debug_every": 200,
+}
+
+UART3 = {
+    "tx_pin": 3,
+    "rx_pin": 5,
+    "device": "/dev/ttyS3",
+    "baudrate": 115200,
+    "timeout": 0.02,
+    "write_timeout": 0.05,
+    "flush_after_write": False,
+    "enabled": True,
+    "debug": False,
+}
+
+# =========================
+# IMU 配置
+# =========================
+IMU_CONFIG = {
+    "mode": "wit_binary",
+    "auto_config": True,
+    "send_crlf_after_cmd": True,
+    "read_max_bytes": 128,
+    "default_angle_z": 0.0,
+    "default_speed_z": 0.0,
+}
+
+IMU_FILTER = {
+    "read_hz": 50,
+    "angle_abs_max": 180.0,
+    "speed_abs_max": 200.0,
+    "use_last_when_lost": True,
+    "default_angle_z": 0.0,
+    "default_speed_z": 0.0,
+    "debug": False,
+    "debug_every": 50,
+}
+
+# =========================
+# Debug 与显示
+# =========================
+DEBUG = {
+    "enable": True,
+    "dir": "debug_img",
+    "folder_prefix": "imgs",
+    "save_visualize": False,
+    "save_interval_sec": 1.0,
+    "save_only_when_found": True,
+    "async_save": False,
+    "save_queue_size": 2,
+    "print_save": False,
+    "print_fps": False,
+    "print_status": False,
+    "print_vision": False,
+    "print_filter": False,
+}
+
+DISPLAY = {
+    "enable": False,
+    "show": False,
+    "window_name": "RDK_25_E1",
+}
+
+FIXED_POINT_A = {
+    "center_x": 320,
+    "center_y": 240,
+    "invert_x": False,
+    "invert_y": False,
+}

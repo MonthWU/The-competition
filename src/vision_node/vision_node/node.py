@@ -11,17 +11,16 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 from .Camera import Camera
-from .config_from_001 import CAMERA, YOLO, CV, TARGET, TASK, LASER_SWITCH, FIXED_POINT_A
-from .visionlib.VisionPipeline import VisionPipeline
+from .config_from_001 import CAMERA, CV, LASER_SWITCH
 
 
 class MJPEGHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             body = (
-                "<html><head><title>V01 Vision</title></head>"
+                "<html><head><title>V02 Vision</title></head>"
                 "<body style='margin:0;background:#111;color:#eee;font-family:Arial;'>"
-                "<div style='padding:8px 12px'>V01 Vision Stream</div>"
+                "<div style='padding:8px 12px'>V02 Vision Stream</div>"
                 "<img src='/stream.mjpg' style='width:100%;max-width:1280px;display:block;margin:0 auto;' />"
                 "</body></html>"
             ).encode("utf-8")
@@ -73,14 +72,6 @@ class ThreadingHTTPServer(ThreadingMixIn, server.HTTPServer):
 
 
 class VisionNode(Node):
-    """
-    V01 第二轮源码减法目标：
-    - 保留相机、YOLO ROI、OpenCV 处理与网页显示框架；
-    - 主链收束到 /vision/target；
-    - 主输出语义收束到 d,a_x；
-    - 不再把 /vision/error 和 ax,ay 当成主发布目标。
-    """
-
     def __init__(self):
         super().__init__('vision_node')
 
@@ -98,12 +89,6 @@ class VisionNode(Node):
             'force_resize': bool(CAMERA.get('force_resize', False)),
         }
         self.cam = Camera(cam_cfg)
-        self.pipeline = VisionPipeline(
-            yolo_cfg=YOLO,
-            cv_cfg=CV,
-            target_cfg=TARGET,
-            task_cfg=TASK,
-        )
 
         self.target_pub = self.create_publisher(String, '/vision/target', 10)
         self.timer = self.create_timer(1.0 / 120.0, self.loop)
@@ -118,7 +103,7 @@ class VisionNode(Node):
         self.http_thread = None
         self._laser_backend = None
         self._laser_pin = None
-        self.get_logger().info('V01 Vision node started (target=d,a_x)')
+        self.get_logger().info('V02 Vision node started (YOLO disabled, target=d,a_x)')
         self._laser_set(True)
         self._start_http(int(CAMERA.get('web_port', 8000)))
         self._last_debug_save_ts = 0.0
@@ -154,91 +139,131 @@ class VisionNode(Node):
         self.get_logger().info(f'Web stream started: http://0.0.0.0:{port}/')
 
     def _force_save_debug_frame(self, frame):
-        from .config_from_001 import DEBUG
         if frame is None:
             return
-        if not DEBUG.get('enable', False):
-            return
-        if not DEBUG.get('save_visualize', False):
-            return
-        now = time.time()
-        interval = float(DEBUG.get('save_interval_sec', 1.0))
-        if now - self._last_debug_save_ts < interval:
-            return
-        dbg_dir = os.path.join('/root/Monthwu/RDK_vision/V01', DEBUG.get('dir', 'debug_img'))
+        dbg_dir = os.path.join('/root/Monthwu/RDK_vision/V02', 'debug_img')
         os.makedirs(dbg_dir, exist_ok=True)
-        tag = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        out = os.path.join(dbg_dir, f'{tag}_frame.jpg')
-        cv2.imwrite(out, frame)
-        self._last_debug_save_ts = now
-        if DEBUG.get('print_save', False):
-            self.get_logger().info(f'[DEBUG] saved frame -> {out}')
 
-    def _calc_target(self, result, frame_shape):
-        """
-        将旧的白框几何结果收束到新主链 d,a_x：
-        - a_x：沿用横向误差思想，只保留 x 方向主量
-        - d：用当前结果中的 scale 反推一个可运行距离量；
-             scale 越大表示目标越近，因此 d 与 scale 反比。
-        """
-        h, w = frame_shape[:2]
-        if not result or not result.get('frame_found', False):
-            return self.last_d, self.last_ax, None, None
+    def _detect_red_circle(self, frame):
+        if frame is None or frame.size == 0:
+            return None
 
-        ref = result.get('white_frame_center', result.get('frame_center'))
-        if ref is None:
-            return self.last_d, self.last_ax, None, None
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        lower_red1 = (0, 90, 70)
+        upper_red1 = (12, 255, 255)
+        lower_red2 = (165, 90, 70)
+        upper_red2 = (180, 255, 255)
 
-        cx = int(ref[0])
-        cy = int(ref[1])
-        img_cx = float(w) / 2.0
-        scale_w = float(result.get('scale_w', result.get('scale', 1.0)))
+        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask = cv2.bitwise_or(mask1, mask2)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
-        dx_pix = img_cx - float(cx)
-        a_x = dx_pix * scale_w
-        if bool(FIXED_POINT_A.get('invert_x', False)):
-            a_x = -a_x
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
 
-        # 以题目目标距离区间为背景，给出可运行距离量；后续可再按标定替换。
-        base_distance_cm = 250.0
-        d = base_distance_cm / max(float(result.get('scale', 1.0)), 1e-6)
+        best = None
+        best_score = -1.0
+        h, w = frame.shape[:2]
+        img_cx = w / 2.0
+        ref_distance_cm = 250.0
+        ref_radius_px = 40.0
 
-        self.last_d, self.last_ax = d, a_x
-        return d, a_x, cx, cy
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area < 80:
+                continue
+            (cx, cy), radius = cv2.minEnclosingCircle(cnt)
+            if radius < 6:
+                continue
+            peri = cv2.arcLength(cnt, True)
+            circularity = 0.0 if peri <= 1e-6 else (4.0 * 3.1415926 * area / (peri * peri))
+            score = area + radius * 5.0 + circularity * 80.0
+            if score > best_score:
+                best_score = score
+                a_x = float(cx - img_cx)
+                d = ref_distance_cm * (ref_radius_px / max(radius, 1e-6))
+                best = {
+                    'cx': float(cx),
+                    'cy': float(cy),
+                    'radius': float(radius),
+                    'd': float(d),
+                    'a_x': float(a_x),
+                }
 
-    def _annotate_target(self, frame, d, a_x, cx, cy):
+        return best
+
+    def _annotate(self, frame, target):
         if frame is None:
             return frame
         vis = frame.copy()
-        if cx is not None and cy is not None:
-            cv2.drawMarker(vis, (int(cx), int(cy)), (0, 255, 255), cv2.MARKER_CROSS, 18, 2)
-        cv2.putText(
-            vis,
-            f'd={d:.1f}cm ax={a_x:.1f}',
-            (10, 28),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.75,
-            (0, 255, 0),
-            2,
-        )
+        h, w = vis.shape[:2]
+
+        # 更醒目的右上角 HUD
+        title = 'V02 HUD'
+        text1 = f'FPS: {self.current_fps:.1f}'
+        text2 = f'RES: {w}x{h}'
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        title_scale = 0.8
+        body_scale = 0.8
+        thick = 2
+        (ttw, tth), _ = cv2.getTextSize(title, font, title_scale, thick)
+        (tw1, th1), _ = cv2.getTextSize(text1, font, body_scale, thick)
+        (tw2, th2), _ = cv2.getTextSize(text2, font, body_scale, thick)
+        panel_w = max(ttw, tw1, tw2) + 36
+        panel_h = tth + th1 + th2 + 42
+        x0 = max(0, w - panel_w - 8)
+        y0 = 8
+        x1 = w - 8
+        y1 = y0 + panel_h
+
+        overlay = vis.copy()
+        cv2.rectangle(overlay, (x0, y0), (x1, y1), (10, 10, 10), -1)
+        vis = cv2.addWeighted(overlay, 0.68, vis, 0.32, 0)
+        cv2.rectangle(vis, (x0, y0), (x1, y1), (0, 255, 255), 3)
+        cv2.putText(vis, title, (x0 + 12, y0 + tth + 6), font, title_scale, (0, 255, 255), thick)
+        cv2.putText(vis, text1, (x0 + 12, y0 + tth + th1 + 16), font, body_scale, (255, 255, 255), thick)
+        cv2.putText(vis, text2, (x0 + 12, y0 + tth + th1 + th2 + 28), font, body_scale, (255, 255, 255), thick)
+
+        if target is not None:
+            cx = int(target['cx'])
+            cy = int(target['cy'])
+            radius = int(target['radius'])
+            cv2.circle(vis, (cx, cy), radius, (0, 0, 255), 2)
+            cv2.drawMarker(vis, (cx, cy), (255, 0, 255), cv2.MARKER_CROSS, 18, 2)
+            cv2.putText(
+                vis,
+                f"d={target['d']:.1f}cm ax={target['a_x']:.1f}",
+                (10, 28),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.75,
+                (0, 255, 0),
+                2,
+            )
         return vis
 
     def loop(self):
         ok, frame = self.cam.read()
+        target = None
         if not ok or frame is None:
             self.cam.reopen_if_needed()
-            d, a_x, cx, cy = self.last_d, self.last_ax, None, None
-            result = None
+            d, a_x = self.last_d, self.last_ax
             vis_frame = None
         else:
-            result, vis_frame = self.pipeline.process(frame)
-            d, a_x, cx, cy = self._calc_target(result, frame.shape)
+            target = self._detect_red_circle(frame)
+            if target is None:
+                d, a_x = self.last_d, self.last_ax
+            else:
+                d, a_x = target['d'], target['a_x']
+                self.last_d, self.last_ax = d, a_x
+            vis_frame = self._annotate(frame, target)
 
-        base_frame = vis_frame if vis_frame is not None else (frame if ok and frame is not None else None)
-        base_frame = self._annotate_target(base_frame, d, a_x, cx, cy)
-        self._force_save_debug_frame(base_frame)
+        self._force_save_debug_frame(vis_frame)
         with self.last_vis_lock:
-            self.last_vis_frame = base_frame
+            self.last_vis_frame = vis_frame
 
         msg = String()
         msg.data = f'{d:.4f},{a_x:.4f}'
@@ -247,10 +272,9 @@ class VisionNode(Node):
         self.frame_count += 1
         now = time.time()
         if now - self.last_t >= 1.0:
-            fps = self.frame_count / (now - self.last_t)
-            self.current_fps = fps
+            self.current_fps = self.frame_count / (now - self.last_t)
             self.get_logger().info(
-                f"VISION: fps={fps:.1f}, res={CAMERA.get('width', 0)}x{CAMERA.get('height', 0)}, d={d:.1f}, ax={a_x:.1f}"
+                f"V02: fps={self.current_fps:.1f}, res={CAMERA.get('width', 0)}x{CAMERA.get('height', 0)}, d={d:.1f}, ax={a_x:.1f}"
             )
             self.frame_count = 0
             self.last_t = now

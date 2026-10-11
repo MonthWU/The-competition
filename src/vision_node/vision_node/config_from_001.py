@@ -1,15 +1,8 @@
 # =========================
-# RDK_25_E1 全局配置
-# 说明：
-# - 保留 E1 的模块化结构；
-# - 功能逻辑按 RDK_25_E 标准版本实现；
-# - 核心流程：USB 摄像头 -> OpenCV 白框中心 -> 与固定 TARGET 比较 -> UART1 发给 STM32；
-# - IMU 接 UART3，解析 WIT/JY901 类 0x55 二进制帧，只透传 angle_z / speed_z 到 UART 数据包。
+# RDK_CJLU_26_V10 全局配置
+# 目标：以 V02 为基础，恢复 YOLO + OpenCV 链路，模型来自 GuideMarker。
 # =========================
 
-# =========================
-# 摄像头配置
-# =========================
 CAMERA = {
     "id": "/dev/video0",
     "candidates": [
@@ -32,9 +25,6 @@ CAMERA = {
     "web_port": 8000,
 }
 
-# =========================
-# 固定目标点配置
-# =========================
 TARGET = {
     "center_x": 320 - 17,
     "center_y": 240 + 3,
@@ -52,9 +42,6 @@ TARGET = {
     "use_last_error_when_laser_lost": False,
 }
 
-# =========================
-# 实际尺寸与任务配置
-# =========================
 TASK = {
     "real_width": 297.0 - 20,
     "real_height": 210.0 - 20,
@@ -67,9 +54,6 @@ TASK = {
     "loop_sleep_ms": 0,
 }
 
-# =========================
-# OpenCV 白框检测配置
-# =========================
 CV = {
     "undistort_enable": False,
     "camera_matrix": [
@@ -144,17 +128,14 @@ CV = {
     "debug": False,
 }
 
-# =========================
-# YOLO 粗定位配置
-# =========================
 YOLO = {
-    "enable": False,
+    "enable": True,
     "enabled": True,
-    "model_path": "/app/RDK_25_E/yolo/models/blank.bin",
+    "model_path": "/root/Monthwu/RDK_vision/RDK_CJLU_26_V10/models/guide_marker.bin",
     "conf_thresh": 0.35,
     "nms_thresh": 0.50,
     "reg_max": 16,
-    "class_names": ["blank"],
+    "class_names": ["guide_marker"],
     "roi_margin": 70,
     "min_area": 300,
     "max_area_ratio": 0.90,
@@ -164,9 +145,6 @@ YOLO = {
     "debug": False,
 }
 
-# =========================
-# 激光 GPIO 配置
-# =========================
 LASER = {
     "pin": 31,
     "default_state": True,
@@ -182,9 +160,6 @@ LASER_SWITCH = {
     "debug": False,
 }
 
-# =========================
-# UART 配置
-# =========================
 UART1 = {
     "tx_pin": 8,
     "rx_pin": 10,
@@ -203,44 +178,6 @@ UART1 = {
     "debug_every": 200,
 }
 
-UART3 = {
-    "tx_pin": 3,
-    "rx_pin": 5,
-    "device": "/dev/ttyS3",
-    "baudrate": 115200,
-    "timeout": 0.02,
-    "write_timeout": 0.05,
-    "flush_after_write": False,
-    "enabled": True,
-    "debug": False,
-}
-
-# =========================
-# IMU 配置
-# =========================
-IMU_CONFIG = {
-    "mode": "wit_binary",
-    "auto_config": True,
-    "send_crlf_after_cmd": True,
-    "read_max_bytes": 128,
-    "default_angle_z": 0.0,
-    "default_speed_z": 0.0,
-}
-
-IMU_FILTER = {
-    "read_hz": 50,
-    "angle_abs_max": 180.0,
-    "speed_abs_max": 200.0,
-    "use_last_when_lost": True,
-    "default_angle_z": 0.0,
-    "default_speed_z": 0.0,
-    "debug": False,
-    "debug_every": 50,
-}
-
-# =========================
-# Debug 与显示
-# =========================
 DEBUG = {
     "enable": False,
     "dir": "debug_img",
@@ -260,7 +197,7 @@ DEBUG = {
 DISPLAY = {
     "enable": False,
     "show": False,
-    "window_name": "RDK_25_E1",
+    "window_name": "RDK_CJLU_26_V10",
 }
 
 FIXED_POINT_A = {

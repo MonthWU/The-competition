@@ -11,16 +11,17 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 from .Camera import Camera
-from .config_from_001 import CAMERA, CV, LASER_SWITCH
+from .config_from_001 import CAMERA, YOLO, CV, LASER_SWITCH
+from .visionlib.VisionPipeline import VisionPipeline
 
 
 class MJPEGHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             body = (
-                "<html><head><title>V02 Vision</title></head>"
+                "<html><head><title>RDK_CJLU_26_V10</title></head>"
                 "<body style='margin:0;background:#111;color:#eee;font-family:Arial;'>"
-                "<div style='padding:8px 12px'>V02 Vision Stream</div>"
+                "<div style='padding:8px 12px'>RDK_CJLU_26_V10 Stream</div>"
                 "<img src='/stream.mjpg' style='width:100%;max-width:1280px;display:block;margin:0 auto;' />"
                 "</body></html>"
             ).encode("utf-8")
@@ -89,6 +90,12 @@ class VisionNode(Node):
             'force_resize': bool(CAMERA.get('force_resize', False)),
         }
         self.cam = Camera(cam_cfg)
+        self.pipeline = VisionPipeline(
+            yolo_cfg=YOLO,
+            cv_cfg=CV,
+            target_cfg={},
+            task_cfg={},
+        )
 
         self.target_pub = self.create_publisher(String, '/vision/target', 10)
         self.timer = self.create_timer(1.0 / 120.0, self.loop)
@@ -103,7 +110,7 @@ class VisionNode(Node):
         self.http_thread = None
         self._laser_backend = None
         self._laser_pin = None
-        self.get_logger().info('V02 Vision node started (YOLO disabled, target=d,a_x)')
+        self.get_logger().info('RDK_CJLU_26_V10 vision node started (YOLO enabled, target=d,a_x)')
         self._laser_set(True)
         self._start_http(int(CAMERA.get('web_port', 8000)))
         self._last_debug_save_ts = 0.0
@@ -141,19 +148,31 @@ class VisionNode(Node):
     def _force_save_debug_frame(self, frame):
         if frame is None:
             return
-        dbg_dir = os.path.join('/root/Monthwu/RDK_vision/V02', 'debug_img')
+        dbg_dir = os.path.join('/root/Monthwu/RDK_vision/RDK_CJLU_26_V10', 'debug_img')
         os.makedirs(dbg_dir, exist_ok=True)
 
-    def _detect_red_circle(self, frame):
+    def _detect_red_circle_in_roi(self, frame, roi):
         if frame is None or frame.size == 0:
             return None
+        h, w = frame.shape[:2]
+        if roi is None:
+            x1, y1, x2, y2 = 0, 0, w, h
+        else:
+            x1, y1, x2, y2 = roi
+            x1 = max(0, min(w - 1, int(x1)))
+            y1 = max(0, min(h - 1, int(y1)))
+            x2 = max(x1 + 1, min(w, int(x2)))
+            y2 = max(y1 + 1, min(h, int(y2)))
 
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        roi_img = frame[y1:y2, x1:x2]
+        if roi_img is None or roi_img.size == 0:
+            return None
+
+        hsv = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
         lower_red1 = (0, 90, 70)
         upper_red1 = (12, 255, 255)
         lower_red2 = (165, 90, 70)
         upper_red2 = (180, 255, 255)
-
         mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
         mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
         mask = cv2.bitwise_or(mask1, mask2)
@@ -167,7 +186,6 @@ class VisionNode(Node):
 
         best = None
         best_score = -1.0
-        h, w = frame.shape[:2]
         img_cx = w / 2.0
         ref_distance_cm = 250.0
         ref_radius_px = 40.0
@@ -184,26 +202,28 @@ class VisionNode(Node):
             score = area + radius * 5.0 + circularity * 80.0
             if score > best_score:
                 best_score = score
-                a_x = float(cx - img_cx)
+                gx = cx + x1
+                gy = cy + y1
+                a_x = float(gx - img_cx)
                 d = ref_distance_cm * (ref_radius_px / max(radius, 1e-6))
                 best = {
-                    'cx': float(cx),
-                    'cy': float(cy),
+                    'cx': float(gx),
+                    'cy': float(gy),
                     'radius': float(radius),
                     'd': float(d),
                     'a_x': float(a_x),
+                    'roi': (x1, y1, x2, y2),
                 }
-
         return best
 
-    def _annotate(self, frame, target):
+    def _annotate(self, frame, target, result):
         if frame is None:
             return frame
         vis = frame.copy()
         h, w = vis.shape[:2]
 
-        # 更醒目的右上角 HUD
-        title = 'V02 HUD'
+        # 右上角 HUD
+        title = 'V10 HUD'
         text1 = f'FPS: {self.current_fps:.1f}'
         text2 = f'RES: {w}x{h}'
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -219,7 +239,6 @@ class VisionNode(Node):
         y0 = 8
         x1 = w - 8
         y1 = y0 + panel_h
-
         overlay = vis.copy()
         cv2.rectangle(overlay, (x0, y0), (x1, y1), (10, 10, 10), -1)
         vis = cv2.addWeighted(overlay, 0.68, vis, 0.32, 0)
@@ -228,38 +247,38 @@ class VisionNode(Node):
         cv2.putText(vis, text1, (x0 + 12, y0 + tth + th1 + 16), font, body_scale, (255, 255, 255), thick)
         cv2.putText(vis, text2, (x0 + 12, y0 + tth + th1 + th2 + 28), font, body_scale, (255, 255, 255), thick)
 
+        if result is not None and result.get('yolo_roi') is not None:
+            rx1, ry1, rx2, ry2 = [int(v) for v in result['yolo_roi']]
+            cv2.rectangle(vis, (rx1, ry1), (rx2, ry2), (0, 255, 255), 2)
+            cv2.putText(vis, 'YOLO ROI', (rx1, max(20, ry1 - 8)), font, 0.6, (0, 255, 255), 2)
+
         if target is not None:
             cx = int(target['cx'])
             cy = int(target['cy'])
             radius = int(target['radius'])
             cv2.circle(vis, (cx, cy), radius, (0, 0, 255), 2)
             cv2.drawMarker(vis, (cx, cy), (255, 0, 255), cv2.MARKER_CROSS, 18, 2)
-            cv2.putText(
-                vis,
-                f"d={target['d']:.1f}cm ax={target['a_x']:.1f}",
-                (10, 28),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.75,
-                (0, 255, 0),
-                2,
-            )
+            cv2.putText(vis, f"d={target['d']:.1f}cm ax={target['a_x']:.1f}", (10, 28), font, 0.75, (0, 255, 0), 2)
         return vis
 
     def loop(self):
         ok, frame = self.cam.read()
+        result = None
         target = None
         if not ok or frame is None:
             self.cam.reopen_if_needed()
             d, a_x = self.last_d, self.last_ax
             vis_frame = None
         else:
-            target = self._detect_red_circle(frame)
+            result, vis_frame = self.pipeline.process(frame)
+            roi = result.get('yolo_roi') if result else None
+            target = self._detect_red_circle_in_roi(frame, roi)
             if target is None:
                 d, a_x = self.last_d, self.last_ax
             else:
                 d, a_x = target['d'], target['a_x']
                 self.last_d, self.last_ax = d, a_x
-            vis_frame = self._annotate(frame, target)
+            vis_frame = self._annotate(vis_frame if vis_frame is not None else frame, target, result)
 
         self._force_save_debug_frame(vis_frame)
         with self.last_vis_lock:
@@ -274,7 +293,7 @@ class VisionNode(Node):
         if now - self.last_t >= 1.0:
             self.current_fps = self.frame_count / (now - self.last_t)
             self.get_logger().info(
-                f"V02: fps={self.current_fps:.1f}, res={CAMERA.get('width', 0)}x{CAMERA.get('height', 0)}, d={d:.1f}, ax={a_x:.1f}"
+                f"V10: fps={self.current_fps:.1f}, res={CAMERA.get('width', 0)}x{CAMERA.get('height', 0)}, d={d:.1f}, ax={a_x:.1f}"
             )
             self.frame_count = 0
             self.last_t = now

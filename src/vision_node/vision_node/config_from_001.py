@@ -15,7 +15,8 @@ CAMERA = {
     ],
     "width": 640,
     "height": 480,
-    "fps": 120,
+    "fps": 30,
+    "loop_hz": 30,
     "fourcc": "MJPG",
     "force_resize": False,
     "open_retry": 60,
@@ -23,6 +24,24 @@ CAMERA = {
     "warmup_frames": 10,
     "buffer_size": 1,
     "web_port": 8000,
+    "stream_host": "192.168.1.125",
+    "debug_save_enable": False,
+    "debug_save_interval_sec": 0.5,
+}
+
+RED_CIRCLE = {
+    "real_diameter_cm": 20.0,
+    "reference_distance_cm": 175.5,
+    "reference_diameter_px": 60.8,
+    "distance_model": "ellipse_minor_reference",
+    "focal_length_mm": 3.24,
+    "pixel_size_um": 3.0,
+    "use_minor_axis_as_diameter": True,
+    "min_area": 120,
+    "min_radius_px": 6.0,
+    "ellipse_min_points": 5,
+    "morph_kernel": 5,
+    "use_fit_ellipse": True,
 }
 
 TARGET = {
@@ -141,7 +160,7 @@ YOLO = {
     "max_area_ratio": 0.90,
     "min_wh": 8,
     "detect_interval": 12,
-    "detect_period_sec": 0.10,
+    "detect_period_sec": 0.20,
     "debug": False,
 }
 

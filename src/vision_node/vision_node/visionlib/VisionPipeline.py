@@ -78,7 +78,7 @@ class VisionPipeline:
             result, vis = process_frame(frame, self.cv_cfg, task_cfg=self.task_cfg, roi=roi)
 
         if isinstance(result, dict):
-            result["yolo_roi"] = roi if roi_source == "yolo" or roi is not None else None
+            result["yolo_roi"] = roi if roi is not None else None
             result["roi_source"] = roi_source
             result["yolo_result"] = self.last_yolo_result
 

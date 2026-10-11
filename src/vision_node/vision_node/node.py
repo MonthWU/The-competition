@@ -11,7 +11,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 from .Camera import Camera
-from .config_from_001 import CAMERA, YOLO, CV, LASER_SWITCH
+from .config_from_001 import CAMERA, YOLO, CV, LASER_SWITCH, RED_CIRCLE
 from .visionlib.VisionPipeline import VisionPipeline
 
 
@@ -19,9 +19,9 @@ class MJPEGHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             body = (
-                "<html><head><title>RDK_CJLU_26_V10</title></head>"
+                "<html><head><title>RDK_CJLU_26_V11</title></head>"
                 "<body style='margin:0;background:#111;color:#eee;font-family:Arial;'>"
-                "<div style='padding:8px 12px'>RDK_CJLU_26_V10 Stream</div>"
+                "<div style='padding:8px 12px'>RDK_CJLU_26_V11 Stream</div>"
                 "<img src='/stream.mjpg' style='width:100%;max-width:1280px;display:block;margin:0 auto;' />"
                 "</body></html>"
             ).encode("utf-8")
@@ -81,7 +81,7 @@ class VisionNode(Node):
             'candidates': CAMERA.get('candidates', ['/dev/video0']),
             'width': int(CAMERA.get('width', 640)),
             'height': int(CAMERA.get('height', 480)),
-            'fps': int(CAMERA.get('fps', 120)),
+            'fps': int(CAMERA.get('fps', 30)),
             'fourcc': CAMERA.get('fourcc', 'MJPG'),
             'buffer_size': int(CAMERA.get('buffer_size', 1)),
             'open_retry': int(CAMERA.get('open_retry', 60)),
@@ -97,8 +97,15 @@ class VisionNode(Node):
             task_cfg={},
         )
 
+        self.loop_hz = float(CAMERA.get('loop_hz', CAMERA.get('fps', 30)))
+        self.loop_hz = max(1.0, min(self.loop_hz, 120.0))
+        self.debug_save_enable = bool(CAMERA.get('debug_save_enable', False))
+        self.debug_save_interval_sec = float(CAMERA.get('debug_save_interval_sec', 0.5))
+        self.project_root = '/root/Monthwu/RDK_vision/RDK_CJLU_26_V11'
+        self.stream_host = CAMERA.get('stream_host', '192.168.1.125')
+
         self.target_pub = self.create_publisher(String, '/vision/target', 10)
-        self.timer = self.create_timer(1.0 / 120.0, self.loop)
+        self.timer = self.create_timer(1.0 / self.loop_hz, self.loop)
         self.frame_count = 0
         self.last_t = time.time()
         self.current_fps = 0.0
@@ -110,10 +117,15 @@ class VisionNode(Node):
         self.http_thread = None
         self._laser_backend = None
         self._laser_pin = None
-        self.get_logger().info('RDK_CJLU_26_V10 vision node started (YOLO enabled, target=d,a_x)')
+        self.last_frame_shape = (cam_cfg['height'], cam_cfg['width'])
+        self._last_debug_save_ts = 0.0
+
+        self.get_logger().info(
+            f'RDK_CJLU_26_V11 vision node started '
+            f'(YOLO enabled={self.pipeline.yolo.enabled}, target=d,a_x, loop_hz={self.loop_hz:.1f})'
+        )
         self._laser_set(True)
         self._start_http(int(CAMERA.get('web_port', 8000)))
-        self._last_debug_save_ts = 0.0
 
     def _laser_set(self, enable: bool):
         if not LASER_SWITCH.get('enabled', False):
@@ -143,13 +155,20 @@ class VisionNode(Node):
         self.http_server.frame_provider = provider
         self.http_thread = threading.Thread(target=self.http_server.serve_forever, daemon=True)
         self.http_thread.start()
-        self.get_logger().info(f'Web stream started: http://0.0.0.0:{port}/')
+        self.get_logger().info(f'Web stream started: http://{self.stream_host}:{port}/')
 
     def _force_save_debug_frame(self, frame):
-        if frame is None:
+        if frame is None or not self.debug_save_enable:
             return
-        dbg_dir = os.path.join('/root/Monthwu/RDK_vision/RDK_CJLU_26_V10', 'debug_img')
+        now = time.time()
+        if now - self._last_debug_save_ts < self.debug_save_interval_sec:
+            return
+        dbg_dir = os.path.join(self.project_root, 'debug_img')
         os.makedirs(dbg_dir, exist_ok=True)
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        path = os.path.join(dbg_dir, f'{ts}.jpg')
+        if cv2.imwrite(path, frame):
+            self._last_debug_save_ts = now
 
     def _detect_red_circle_in_roi(self, frame, roi):
         if frame is None or frame.size == 0:
@@ -176,7 +195,11 @@ class VisionNode(Node):
         mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
         mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
         mask = cv2.bitwise_or(mask1, mask2)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        k = int(RED_CIRCLE.get('morph_kernel', 5))
+        if k % 2 == 0:
+            k += 1
+        k = max(3, k)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k))
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
@@ -187,31 +210,71 @@ class VisionNode(Node):
         best = None
         best_score = -1.0
         img_cx = w / 2.0
-        ref_distance_cm = 250.0
-        ref_radius_px = 40.0
+        ref_distance_cm = float(RED_CIRCLE.get('reference_distance_cm', 250.0))
+        ref_diameter_px = float(RED_CIRCLE.get('reference_diameter_px', 80.0))
+        real_diameter_cm = float(RED_CIRCLE.get('real_diameter_cm', 6.0))
+        focal_length_mm = float(RED_CIRCLE.get('focal_length_mm', 2.8))
+        pixel_size_um = float(RED_CIRCLE.get('pixel_size_um', 3.0))
+        distance_model = str(RED_CIRCLE.get('distance_model', 'ellipse_minor_reference'))
+        use_minor_axis_as_diameter = bool(RED_CIRCLE.get('use_minor_axis_as_diameter', True))
+        min_area = float(RED_CIRCLE.get('min_area', 120))
+        min_radius_px = float(RED_CIRCLE.get('min_radius_px', 6.0))
+        ellipse_min_points = int(RED_CIRCLE.get('ellipse_min_points', 5))
+        use_fit_ellipse = bool(RED_CIRCLE.get('use_fit_ellipse', True))
+
+        focal_px = 0.0
+        if pixel_size_um > 1e-6:
+            focal_px = focal_length_mm / (pixel_size_um / 1000.0)
 
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area < 80:
+            if area < min_area:
                 continue
+
             (cx, cy), radius = cv2.minEnclosingCircle(cnt)
-            if radius < 6:
+            if radius < min_radius_px:
                 continue
+
             peri = cv2.arcLength(cnt, True)
             circularity = 0.0 if peri <= 1e-6 else (4.0 * 3.1415926 * area / (peri * peri))
-            score = area + radius * 5.0 + circularity * 80.0
+
+            major = radius * 2.0
+            minor = radius * 2.0
+            angle = 0.0
+            if use_fit_ellipse and len(cnt) >= ellipse_min_points:
+                try:
+                    (ecx, ecy), (ew, eh), eangle = cv2.fitEllipse(cnt)
+                    cx, cy = ecx, ecy
+                    major = max(float(ew), float(eh))
+                    minor = min(float(ew), float(eh))
+                    angle = float(eangle)
+                except Exception:
+                    pass
+
+            effective_diameter_px = minor if use_minor_axis_as_diameter else major
+            if effective_diameter_px <= 1e-6:
+                continue
+
+            score = area + effective_diameter_px * 6.0 + circularity * 80.0
             if score > best_score:
                 best_score = score
                 gx = cx + x1
                 gy = cy + y1
-                a_x = float(gx - img_cx)
-                d = ref_distance_cm * (ref_radius_px / max(radius, 1e-6))
+                vision_x = float(gx - img_cx)
+                if distance_model == 'pinhole_focal' and focal_px > 0.0 and real_diameter_cm > 0.0:
+                    distance = (real_diameter_cm * focal_px) / effective_diameter_px
+                else:
+                    distance = ref_distance_cm * (ref_diameter_px / effective_diameter_px)
                 best = {
                     'cx': float(gx),
                     'cy': float(gy),
                     'radius': float(radius),
-                    'd': float(d),
-                    'a_x': float(a_x),
+                    'ellipse_major': float(major),
+                    'ellipse_minor': float(minor),
+                    'ellipse_angle': float(angle),
+                    'effective_diameter_px': float(effective_diameter_px),
+                    'distance': float(distance),
+                    'vision_x': float(vision_x),
                     'roi': (x1, y1, x2, y2),
                 }
         return best
@@ -221,44 +284,50 @@ class VisionNode(Node):
             return frame
         vis = frame.copy()
         h, w = vis.shape[:2]
+        center_x = w // 2
+        cv2.line(vis, (center_x, 0), (center_x, h - 1), (255, 255, 0), 1)
 
-        # 右上角 HUD
-        title = 'V10 HUD'
-        text1 = f'FPS: {self.current_fps:.1f}'
-        text2 = f'RES: {w}x{h}'
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        title_scale = 0.8
-        body_scale = 0.8
-        thick = 2
-        (ttw, tth), _ = cv2.getTextSize(title, font, title_scale, thick)
-        (tw1, th1), _ = cv2.getTextSize(text1, font, body_scale, thick)
-        (tw2, th2), _ = cv2.getTextSize(text2, font, body_scale, thick)
-        panel_w = max(ttw, tw1, tw2) + 36
-        panel_h = tth + th1 + th2 + 42
-        x0 = max(0, w - panel_w - 8)
-        y0 = 8
-        x1 = w - 8
-        y1 = y0 + panel_h
-        overlay = vis.copy()
-        cv2.rectangle(overlay, (x0, y0), (x1, y1), (10, 10, 10), -1)
-        vis = cv2.addWeighted(overlay, 0.68, vis, 0.32, 0)
-        cv2.rectangle(vis, (x0, y0), (x1, y1), (0, 255, 255), 3)
-        cv2.putText(vis, title, (x0 + 12, y0 + tth + 6), font, title_scale, (0, 255, 255), thick)
-        cv2.putText(vis, text1, (x0 + 12, y0 + tth + th1 + 16), font, body_scale, (255, 255, 255), thick)
-        cv2.putText(vis, text2, (x0 + 12, y0 + tth + th1 + th2 + 28), font, body_scale, (255, 255, 255), thick)
-
-        if result is not None and result.get('yolo_roi') is not None:
-            rx1, ry1, rx2, ry2 = [int(v) for v in result['yolo_roi']]
-            cv2.rectangle(vis, (rx1, ry1), (rx2, ry2), (0, 255, 255), 2)
-            cv2.putText(vis, 'YOLO ROI', (rx1, max(20, ry1 - 8)), font, 0.6, (0, 255, 255), 2)
+        cv2.putText(
+            vis,
+            f'FPS: {self.current_fps:.1f}',
+            (12, 26),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2,
+        )
 
         if target is not None:
             cx = int(target['cx'])
             cy = int(target['cy'])
-            radius = int(target['radius'])
-            cv2.circle(vis, (cx, cy), radius, (0, 0, 255), 2)
-            cv2.drawMarker(vis, (cx, cy), (255, 0, 255), cv2.MARKER_CROSS, 18, 2)
-            cv2.putText(vis, f"d={target['d']:.1f}cm ax={target['a_x']:.1f}", (10, 28), font, 0.75, (0, 255, 0), 2)
+            if target.get('ellipse_major', 0.0) > 0 and target.get('ellipse_minor', 0.0) > 0:
+                axes = (
+                    max(1, int(target['ellipse_major'] / 2.0)),
+                    max(1, int(target['ellipse_minor'] / 2.0)),
+                )
+                cv2.ellipse(vis, (cx, cy), axes, target.get('ellipse_angle', 0.0), 0, 360, (0, 0, 255), 2)
+            else:
+                radius = int(target['radius'])
+                cv2.circle(vis, (cx, cy), radius, (0, 0, 255), 2)
+
+            cv2.putText(
+                vis,
+                f'distance={target["distance"]:.1f}cm vision_x={target["vision_x"]:.1f}',
+                (12, 54),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.65,
+                (0, 255, 0),
+                2,
+            )
+            cv2.putText(
+                vis,
+                f'diam_px={target.get("effective_diameter_px", 0.0):.1f}',
+                (12, 82),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                2,
+            )
         return vis
 
     def loop(self):
@@ -270,13 +339,14 @@ class VisionNode(Node):
             d, a_x = self.last_d, self.last_ax
             vis_frame = None
         else:
+            self.last_frame_shape = frame.shape[:2]
             result, vis_frame = self.pipeline.process(frame)
             roi = result.get('yolo_roi') if result else None
             target = self._detect_red_circle_in_roi(frame, roi)
             if target is None:
                 d, a_x = self.last_d, self.last_ax
             else:
-                d, a_x = target['d'], target['a_x']
+                d, a_x = target['distance'], target['vision_x']
                 self.last_d, self.last_ax = d, a_x
             vis_frame = self._annotate(vis_frame if vis_frame is not None else frame, target, result)
 
@@ -292,8 +362,9 @@ class VisionNode(Node):
         now = time.time()
         if now - self.last_t >= 1.0:
             self.current_fps = self.frame_count / (now - self.last_t)
+            h, w = self.last_frame_shape
             self.get_logger().info(
-                f"V10: fps={self.current_fps:.1f}, res={CAMERA.get('width', 0)}x{CAMERA.get('height', 0)}, d={d:.1f}, ax={a_x:.1f}"
+                f"V11: fps={self.current_fps:.1f}, res={w}x{h}, distance={d:.1f}, vision_x={a_x:.1f}, yolo={self.pipeline.yolo.enabled}"
             )
             self.frame_count = 0
             self.last_t = now

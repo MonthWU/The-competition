@@ -4,13 +4,13 @@
 - 彻底去掉 IMU 依赖；
 - 保留独立 200Hz 精确发送线程；
 - 只接收视觉侧结果；
-- 当前优先支持 /vision/target: "d,a_x"，并兼容旧 /vision/error: "ax,ay"。
+- 当前优先支持 /vision/target: "distance,vision_x"，并兼容旧 /vision/error: "ax,ay"。
 
 当前 24B 包结构仍保持 5 个整数位，便于与旧下位机链路兼容：
     <i i i i I>
     [v0, v1, 0, 0, timestamp_ms]
 其中：
-- 若 topic=/vision/target，则 v0=d, v1=a_x
+- 若 topic=/vision/target，则 v0=distance, v1=vision_x
 - 若 topic=/vision/error，则 v0=ax, v1=ay
 """
 import os
@@ -266,7 +266,7 @@ class UartSenderNode(Node):
         debug_every = self.declare_parameter("debug_every", 200).value
         target_topic = self.declare_parameter("target_topic", "/vision/target").value
         error_topic = self.declare_parameter("error_topic", "/vision/error").value
-        packet_mode = self.declare_parameter("packet_mode", "d_ax").value
+        packet_mode = self.declare_parameter("packet_mode", "distance_vision_x").value
         value0_scale = self.declare_parameter("value0_scale", 100).value
         value1_scale = self.declare_parameter("value1_scale", 100).value
 
@@ -307,15 +307,14 @@ class UartSenderNode(Node):
         try:
             parts = msg.data.split(",")
             if len(parts) >= 2:
-                d = float(parts[0])
-                a_x = float(parts[1])
-                self.worker.update(d, a_x, "d", "a_x")
-                self._publish_dbg("d", d, "a_x", a_x)
+                distance = float(parts[0])
+                vision_x = float(parts[1])
+                self.worker.update(distance, vision_x, "distance", "vision_x")
+                self._publish_dbg("distance", distance, "vision_x", vision_x)
         except (ValueError, IndexError) as e:
             self.get_logger().warn(f"[UART] parse target msg failed: {msg.data}, {e}")
 
     def error_cb(self, msg):
-        # 兼容旧视觉链路；如果已切到 /vision/target，此回调不会影响新主链。
         try:
             parts = msg.data.split(",")
             if len(parts) >= 2:

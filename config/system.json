@@ -1,0 +1,31 @@
+{
+  "mode": "work",
+  "communication": {"transport": "serial", "device": "/dev/ttyS1", "baudrate": 115200, "write_timeout_s": 1.0},
+  "mission": {"entry": "full", "prescan_source": "radar", "object_enabled": true,
+    "shot_timeout_s": 30.0, "collect_timeout_s": 8.0, "sensor_timeout_s": 5.0,
+    "minimum_frames": 2, "minimum_winner_share": 0.7},
+  "cameras": {
+    "qr": {"device": "", "width": 640, "height": 400, "fps": 30, "fourcc": "MJPG", "controls": {}, "roi": null},
+    "object": {"device": "", "width": 640, "height": 480, "fps": 30, "fourcc": "MJPG", "model": "object", "controls": {}},
+    "prescan": {"device": "", "width": 1280, "height": 720, "fps": 30, "fourcc": "MJPG", "model": "obstacle", "controls": {}}
+  },
+  "models": {
+    "object": {"file": "../assets/models/yolo11_x5.bin", "classes": "../assets/models/classes.name", "class_map": "../assets/models/yolo11_x5.classes.json", "candidate_library": "../native/lib/libcar26_candidates.so", "overlap_capture": true, "score_threshold": 0.25, "nms_threshold": 0.45, "rgb_gains": [1.0, 1.0, 1.0]},
+    "obstacle": {"file": "../assets/models/yolo11_x5_obstacle.bin", "classes": "../assets/models/obstacle.names", "score_threshold": 0.4, "nms_threshold": 0.5, "rgb_gains": [1.0, 1.0, 1.0]}
+  },
+  "camera_processing": {"minimum_area_px": 2000, "mark23_overlap": 0.8, "mark_block_overlap": 0.5, "reference_px": [320, 240], "block_roi": null},
+  "disc_centering": {"enabled": false},
+  "target_focus": {"enabled": false, "angle_threshold_deg": 3.0, "fps": 30,
+    "native_library": "../native/lib/libcar26_focus.so", "mode_transform": [1.0, 1.0, 0.0, 0.0],
+    "search_radius_px": 180, "minimum_radius_px": 8, "maximum_radius_px": 120,
+    "canny_threshold": 100.0, "circle_threshold": 18.0, "settle_frames": 3,
+    "lost_timeout_s": 1.5, "maximum_duration_s": 30.0},
+  "camera_mapping": {"roi_file": "../assets/calibration/merged_runtime.json", "start_ids": [4], "calibration_size": [1280, 720], "score_threshold": 0.5},
+  "radar": {"enabled": true, "device": "", "baudrate": 460800, "frequency_hz": 10.0,
+    "stream_timeout_s": 2.0, "min_range_m": 0.05, "max_range_m": 12.0, "minimum_quality": 1,
+    "cluster_gap_m": 0.12, "minimum_cluster_points": 3,
+    "extrinsic": [0.0, 0.0, 0.0], "extrinsic_calibrated": false},
+  "radar_mapping": {"targets_by_start": {}, "heading_deg_by_start": {}, "match_radius_m": 0.15, "minimum_width_m": 0.02, "maximum_width_m": 0.8},
+  "hmi": {"enabled": true, "host": "0.0.0.0", "port": 8080, "preview_fps": 10, "max_stream_clients": 4},
+  "recording": {"enabled": false, "directory": "../output/video", "maximum_seconds": 300}
+}

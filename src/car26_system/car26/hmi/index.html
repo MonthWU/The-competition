@@ -1,0 +1,188 @@
+<!-- Purpose: show dual cameras, independent UART histories and queued task controls. -->
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>工创小车 · 控制台</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui;color:#e2e8f0;background:#0b1120}*{box-sizing:border-box}body{margin:0}header,main{max-width:1440px;margin:auto;padding:20px 28px}header{display:flex;align-items:center;justify-content:space-between;gap:16px}h1{font-size:23px;margin:0}h2{font-size:17px;margin:0 0 16px}h3{font-size:14px;margin:0}p{line-height:1.6}.muted{color:#94a3b8;font-size:13px}#summary{margin:0}main{display:grid;gap:18px;padding-top:0}section,details{background:#131e30;border:1px solid #263449;border-radius:12px;padding:20px}.number{color:#6ee7b7;margin-right:10px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:18px;min-width:0}.camera-head,.serial-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}.screen{position:relative;aspect-ratio:16/9;background:#000;border:1px solid #334155;border-radius:8px;overflow:hidden;display:grid;place-items:center}.screen img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;visibility:hidden}.screen.live img{visibility:visible}.screen.live .placeholder{display:none}.placeholder{color:#94a3b8;font-size:13px}.badge{color:#94a3b8;font-size:12px}.serial-head span{font:12px ui-monospace,monospace;color:#94a3b8}pre{font:12px/1.7 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.log{height:155px;overflow:auto;background:#080f1c;border-radius:8px;padding:12px;border:1px solid #263449}.control{display:grid;grid-template-columns:1fr 1fr;gap:18px}.control>div{background:#0d1728;padding:16px;border-radius:8px;min-width:0}.value{font-size:21px;min-height:32px;margin:8px 0 14px;overflow-wrap:anywhere;color:#6ee7b7}button{font:inherit;background:#234a69;border:1px solid #387499;color:#f1f5f9;padding:10px 18px;border-radius:6px;cursor:pointer}button:hover{background:#2c6085}button:focus-visible{outline:2px solid #6ee7b7;outline-offset:3px}button:disabled{opacity:.45;cursor:default}#actionStatus{margin:12px 0 0;min-height:24px;color:#94a3b8}summary{cursor:pointer;color:#94a3b8}canvas{max-width:100%;width:360px}.diagnostics{margin-top:18px}.diagnostics pre{max-height:240px;overflow:auto}[hidden]{display:none!important}@media(min-width:1100px){.bottom{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}.control{grid-template-columns:1fr}.control>div{padding:12px}.value{font-size:18px;margin:6px 0 10px}}@media(max-width:650px){header,main{padding:16px}header{align-items:flex-start;flex-direction:column}.pair,.control{grid-template-columns:1fr}section{padding:16px}h1{font-size:21px}.log{height:150px}}
+</style>
+<style>
+.log{height:240px;white-space:normal}.packet+.packet{margin-top:14px;padding-top:14px;border-top:1px solid #263449}.packet-meta{font:12px/1.6 ui-monospace,Consolas,monospace;color:#94a3b8;margin-bottom:6px}.packet-summary{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.65 system-ui;color:#a7f3d0;margin:0}.packet-hex{margin-top:7px;color:#94a3b8;font-size:11px}
+</style></head><body>
+<header><h1>工创小车 <span class="muted">运行控制台</span></h1><p id="summary" class="muted" role="status">正在连接…</p></header>
+<main>
+<section><h2><span class="number">01</span>相机画面</h2><div class="pair">
+<div><div class="camera-head"><h3>二维码相机</h3><span id="qrCameraState" class="badge">未开启</span></div><div id="qrScreen" class="screen"><span class="placeholder">相机未开启</span><img id="qrPreview" alt="二维码相机实时画面"></div></div>
+<div><div class="camera-head"><h3>物块相机</h3><span id="objectCameraState" class="badge">未开启</span></div><div id="objectScreen" class="screen"><span class="placeholder">相机未开启</span><img id="objectPreview" alt="物块与标靶相机实时画面"></div></div>
+</div></section>
+<div class="bottom"><section><h2><span class="number">02</span>串口通信</h2><p id="serialState" class="muted">等待串口状态</p><div class="pair">
+<div><div class="serial-head"><h3>TX · 发送</h3><span id="txCount">0 B</span></div><div id="txLog" class="log" tabindex="0" aria-label="发送报文记录">暂无发送记录</div></div>
+<div><div class="serial-head"><h3>RX · 接收</h3><span id="rxCount">0 B</span></div><div id="rxLog" class="log" tabindex="0" aria-label="接收报文记录">暂无接收记录</div></div>
+</div><p class="muted">时间 / 字节数 / 协议解析 / 原始 HEX · 各保留最近 100 条；不完整片段仅显示原始字节</p></section>
+<section><h2><span class="number">03</span>任务控制</h2><div class="control">
+<div><h3>二维码识别结果</h3><p id="qrResult" class="value" aria-live="polite">尚未识别</p><button id="qrReset" type="button" disabled>重置二维码结果</button></div>
+<div><h3>当前任务</h3><p id="currentTask" class="value" aria-live="polite">等待状态</p><button id="taskSwitch" type="button" disabled>切换当前任务</button></div>
+</div><p id="actionStatus" role="status">等待应用连接</p></section></div>
+<details><summary>更多运行信息 · 雷达与理论路径</summary><div class="pair diagnostics"><div><h3>雷达障碍物</h3><canvas id="radar" width="480" height="480"></canvas><pre id="radarState"></pre></div><div><h3>理论路径</h3><p id="navigationState"></p><canvas id="route" width="480" height="480"></canvas></div><pre id="state"></pre><pre id="events"></pre></div></details>
+</main><script>
+/* 函数名字：$；函数作用：查找页面元素；参数意义与范围：selector：有效CSS选择器字符串。 */
+const $=selector=>document.querySelector(selector);
+let snapshot=null,busy=false,pending=null,pendingSince=0,uiGeneration=0,online=false;
+const cameraViews={qr:{active:false,loaded:false,failed:0},object:{active:false,loaded:false,failed:0}};
+/* 函数名字：blackCamera；函数作用：清除连接和旧图像并显示黑屏；参数意义与范围：role：qr或object；message：提示文本。 */
+function blackCamera(role,message){const view=cameraViews[role];view.active=false;view.loaded=false;$('#'+role+'Preview').removeAttribute('src');$('#'+role+'Screen').classList.remove('live');$('#'+role+'Screen .placeholder').textContent=message;$('#'+role+'CameraState').textContent=message}
+/* 函数名字：cameraLoaded；函数作用：首帧到达后显示画面；参数意义与范围：event：img的load事件。 */
+function cameraLoaded(event){const role=event.target.dataset.role;if(!cameraViews[role].active)return;cameraViews[role].loaded=true;$('#'+role+'Screen').classList.add('live')}
+/* 函数名字：cameraFailed；函数作用：流错误时清除旧画面并延迟重连；参数意义与范围：event：img的error事件。 */
+function cameraFailed(event){const role=event.target.dataset.role;cameraViews[role].failed=Date.now();blackCamera(role,'画面中断，等待重连')}
+for(const role of Object.keys(cameraViews)){const img=$('#'+role+'Preview');img.dataset.role=role;img.onload=cameraLoaded;img.onerror=cameraFailed}
+/* 函数名字：renderCameras；函数作用：有新鲜图像的相机建立预览，其余窗口显示黑屏；参数意义与范围：s：API状态快照。 */
+function renderCameras(s){for(const role of Object.keys(cameraViews)){const view=cameraViews[role],camera=s.camera||{},age=s.previews?.[role]?.age_s;
+const ready=camera.role===role&&camera.state==='ready'&&typeof age==='number'&&age<3;
+if(!ready){blackCamera(role,camera.role===role&&camera.state==='ready'?'等待画面':'未开启');continue}
+if(!view.active&&Date.now()-view.failed>2000){view.active=true;$('#'+role+'Preview').src='/camera/'+role;$('#'+role+'Screen .placeholder').textContent='正在加载画面'}
+$('#'+role+'CameraState').textContent=view.loaded?'实时画面':'正在加载画面';}}
+/* SERIAL_DECODER_START */
+const SERIAL_BLOCK_NAMES={0x41:'红色物块',0x42:'黑色物块',0x43:'绿色物块',0x44:'黄色物块',0x45:'浅蓝色物块',0x46:'深蓝色物块'};
+const SERIAL_STATE_NAMES={0x60:'二维码识别',0x61:'物料识别',0x62:'标靶识别'};
+const SERIAL_COMMAND_NAMES={ack:'扫描握手确认',4:'起点 4',24:'起点 24',skip:'跳过预扫描',shot:'开始预扫描',align_done:'完成标靶精定位',align_cancel:'取消标靶精定位'};
+/* 函数名字：serialHexByte；函数作用：将合法HEX字节转为整数；参数意义与范围：value：两个十六进制字符。 */
+function serialHexByte(value){return parseInt(value,16)}
+/* 函数名字：serialCode；函数作用：显示原始单字节类型码；参数意义与范围：value：0～255整数。 */
+function serialCode(value){return '0x'+value.toString(16).toUpperCase().padStart(2,'0')}
+/* 函数名字：serialOffset；函数作用：明确标示有符号像素偏差；参数意义与范围：value：int16整数。 */
+function serialOffset(value){return (value>=0?'+':'')+value+' px'}
+/*
+函数名字：decodeSerialFrame
+函数作用：按实际帧格式及小端字段解释完整报文，不将二进制载荷当作UTF-8文本。
+参数意义与范围：
+  hex：一条实际UART读写记录的HEX字符串，允许空白分隔；不拼接不同记录。
+  direction：tx或rx，用于区分状态通知与下位机圆盘确认请求，默认tx。
+*/
+function decodeSerialFrame(hex,direction='tx'){
+  const fallback='未解码：分片、未知类型或报文格式不完整';
+  if(typeof hex!=='string')return fallback;
+  const compact=hex.replace(/\s/g,'');
+  if(!compact.length||compact.length%2||!/^[0-9a-f]+$/i.test(compact))return fallback;
+  const bytes=Uint8Array.from(compact.match(/../g),serialHexByte);
+  const size=bytes.length;
+  if(size<3||bytes[0]!==0x5B||bytes[size-1]!==0x5D)return fallback;
+  const control=String.fromCharCode(...bytes.subarray(1,size-1));
+  const controls={qr_reset:'重置二维码结果',task_switch:'切换二维码/物块任务',task_qr:'选择二维码任务',task_object:'选择物块任务'};
+  if(Object.hasOwn(controls,control))return '控制命令 · '+controls[control];
+  const code=bytes[1],view=new DataView(bytes.buffer);
+  if(code===0x71){
+    const count=bytes[2];
+    if(count>6||size!==4+count*5)return fallback;
+    const lines=['物块识别（0x71） · 种类数：'+count],seen=new Set();
+    for(let i=0;i<count;i++){
+      const start=3+i*5,label=bytes[start];
+      if(!SERIAL_BLOCK_NAMES[label]||seen.has(label))return fallback;
+      seen.add(label);
+      lines.push((i+1)+'. '+SERIAL_BLOCK_NAMES[label]+'（'+serialCode(label)+'）'+
+        '\ndx='+serialOffset(view.getInt16(start+1,true))+'，dy='+serialOffset(view.getInt16(start+3,true)));
+    }
+    return lines.join('\n');
+  }
+  if(code===0x72){
+    if(size!==10||bytes[2]>1)return fallback;
+    const angle=view.getInt16(3,true);
+    if(angle< -9000||angle>8999)return fallback;
+    return '标靶姿态（0x72） · '+(bytes[2]?'圆心精定位':'YOLO粗定位')+
+      '\nα='+(angle/100).toFixed(2)+'°，dx='+serialOffset(view.getInt16(5,true))+
+      '，dy='+serialOffset(view.getInt16(7,true));
+  }
+  if(code===0x61&&size===9&&bytes[2]===0x2C&&bytes[5]===0x2C){
+    return '圆盘中心偏差（0x61） · 采集原图'+
+      '\ndx='+serialOffset(view.getInt16(3,true))+'，dy='+serialOffset(view.getInt16(6,true));
+  }
+  if(SERIAL_STATE_NAMES[code]&&size===5&&bytes[2]===0x2C&&bytes[3]<=1){
+    if(direction==='rx'&&code===0x61&&bytes[3]===1)return '下位机确认（0x61,1） · 请求圆盘中心检测';
+    return '状态通知 · '+SERIAL_STATE_NAMES[code]+'（'+serialCode(code)+'） · '+(bytes[3]?'进入':'退出');
+  }
+  if(code===0x70){
+    if(size<4)return fallback;
+    const payload=bytes.subarray(2,size-1);
+    if(payload.includes(0x5D))return fallback;
+    try{return '二维码结果（0x70）\n'+new TextDecoder('utf-8',{fatal:true}).decode(payload)}
+    catch(error){return fallback}
+  }
+  let ascii='';
+  for(let i=1;i<size-1;i++){if(bytes[i]<32||bytes[i]>126)return fallback;ascii+=String.fromCharCode(bytes[i])}
+  if(Object.hasOwn(SERIAL_COMMAND_NAMES,ascii))return '控制/握手 · '+SERIAL_COMMAND_NAMES[ascii];
+  const parts=ascii.split(' '),count=Number(parts[0]),ids=[];
+  if(!Number.isInteger(count)||count<0||count>3||parts.length!==count+2||!/^[0-9a-f]{2}$/i.test(parts[parts.length-1]))return fallback;
+  let check=count;
+  for(let i=0;i<count;i++){
+    const id=Number(parts[i+1]);
+    if(![1,3,5,7,9,11,12,13,15,17,19,21,23].includes(id)||ids.includes(id))return fallback;
+    ids.push(id);check^=id;
+  }
+  return check===parseInt(parts[parts.length-1],16)?'预扫描地图 · 障碍格数：'+count+' · 格号：'+(ids.join('、')||'无'):fallback;
+}
+/* SERIAL_DECODER_END */
+/*
+函数名字：formatRecord
+函数作用：将时间/长度、协议含义及原始HEX分成独立块，按纯文本插入页面。
+参数意义与范围：record：含at、bytes、hex的UART记录；direction：tx或rx。
+*/
+function formatRecord(record,direction){
+  const article=document.createElement('article');article.className='packet';
+  const meta=document.createElement('div');meta.className='packet-meta';
+  meta.textContent='时间：'+new Date(record.at*1000).toLocaleTimeString('zh-CN',{hour12:false})+' · 长度：'+record.bytes+' B';
+  const meaning=document.createElement('p');meaning.className='packet-summary';meaning.textContent=decodeSerialFrame(record.hex,direction);
+  const raw=document.createElement('pre');raw.className='packet-hex';raw.textContent='HEX  '+(record.hex||'').toUpperCase();
+  article.append(meta,meaning,raw);return article;
+}
+/* 函数名字：renderSerial；函数作用：显示两个方向的数据并保留用户滚动位置；参数意义与范围：s：API状态快照。 */
+function renderSerial(s){const c=s.communication||{};$('#serialState').textContent=(c.device||'串口未连接')+(c.baudrate?' · '+c.baudrate+' baud':'')+' · '+(c.state==='ready'?'已连接':'未连接');
+for(const direction of ['tx','rx']){const records=s.serial?.[direction]||[],el=$('#'+direction+'Log'),bottom=el.scrollHeight-el.scrollTop-el.clientHeight<24;
+const previousScroll=el.scrollTop,fragment=document.createDocumentFragment();
+for(const record of records)fragment.append(formatRecord(record,direction));
+if(records.length)el.replaceChildren(fragment);else el.textContent=direction==='tx'?'暂无发送记录':'暂无接收记录';
+el.scrollTop=bottom?el.scrollHeight:previousScroll;}
+$('#txCount').textContent=(c.sent_bytes||0)+' B';$('#rxCount').textContent=(c.received_bytes||0)+' B';}
+/* 函数名字：renderControls；函数作用：显示结果和实际任务，仅在可操作时启用按钮；参数意义与范围：s：API状态快照。 */
+function renderControls(s){const m=s.mission||{},ready=online&&s.application?.state==='running'&&['QR','OBJECT'].includes(m.state),preview=m.state==='QR_PREVIEW';
+$('#qrResult').textContent=m.qr_text||'尚未识别';$('#currentTask').textContent=['QR','QR_PREVIEW','QR_SENDING'].includes(m.state)?'二维码':m.state==='OBJECT'?'物块':'等待任务就绪';
+$('#qrReset').disabled=busy||!online||!m.qr_reset_enabled||(!ready&&!preview);$('#taskSwitch').disabled=busy||!ready||!m.task_switch_enabled;$('#taskSwitch').textContent=m.state==='OBJECT'?'切换至二维码任务':m.state==='QR'?'切换至物块任务':'切换当前任务';}
+/* CONTROL_RESULT_START */
+/* 函数名字：controlResult；函数作用：按请求ID查询当前或历史结果，避免MCU请求覆盖网页确认；参数意义与范围：state：API的control对象或undefined；requestId：当前网页等待的UUID。 */
+function controlResult(state,requestId){if(!state||!requestId)return null;return state.request_id===requestId?state:(state.results||[]).find(result=>result.request_id===requestId)||null}
+/* CONTROL_RESULT_END */
+/* 函数名字：control；函数作用：提交动作并等待后台完成确认；参数意义与范围：event：两个控制按钮的click事件。 */
+async function control(event){if(busy||!snapshot)return;busy=true;uiGeneration++;renderControls(snapshot);$('#actionStatus').textContent='正在执行，请稍候…';
+try{const r=await fetch(event.target.id==='qrReset'?'/api/qr/reset':'/api/task/switch',{method:'POST',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('请求失败（'+r.status+'）');const result=await r.json();
+if(result.status==='accepted'){pending=result.request_id;pendingSince=Date.now();return}if(result.status!=='reset')throw Error('后台未确认操作');snapshot.mission.qr_text=null;$('#actionStatus').textContent='二维码结果已重置';
+}catch(error){$('#actionStatus').textContent=error.message+'，请检查当前状态'}busy=false;renderControls(snapshot);}
+$('#qrReset').onclick=control;$('#taskSwitch').onclick=control;
+/* 函数名字：draw；函数作用：绘制雷达障碍物；参数意义与范围：obstacles：车体坐标障碍物数组，单位米。 */
+function draw(obstacles){const ctx=$('#radar').getContext('2d');ctx.clearRect(0,0,480,480);ctx.strokeStyle='#64748b';for(let r=40;r<=200;r+=40){ctx.beginPath();ctx.arc(240,240,r,0,Math.PI*2);ctx.stroke()}ctx.fillStyle='#34d399';for(const o of obstacles){ctx.beginPath();ctx.arc(240-o.y_m*40,240-o.x_m*40,Math.max(3,o.width_m*20),0,Math.PI*2);ctx.fill()}}
+/* 函数名字：drawNavigation；函数作用：绘制有效理论路径；参数意义与范围：navigation：API规划快照或undefined，单位米。 */
+function drawNavigation(navigation){
+  const c=document.querySelector('#route'), g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);
+  const labels={configuration_required:'待填写并确认场地配置',waiting:'等待规划',ready:'路线已生成',no_path:'没有可通行路线',off_route:'当前位置偏离配置道路',complete:'已到达全部任务点',waiting_calibration:'等待雷达外参确认',waiting_pose:'等待有效车辆定位',waiting_radar:'等待新鲜雷达数据',waiting_scan_points:'等待有效雷达点',waiting_synchronized_pose:'等待与雷达同步的定位',observation_limit:'观测容量已满，需核对地图后重启',invalid_scan:'雷达数据无效'};
+  document.querySelector('#navigationState').textContent=navigation?((navigation.mode==='fixed'?'无雷达 · 固定路线':'有雷达 · 动态路线')+' · '+(labels[navigation.status]||navigation.status)+(navigation.status==='ready'?' · '+navigation.length_m.toFixed(2)+'米':'')+' · 未下发运动指令'):'未启用路线规划';
+  if(!navigation)return;
+  const nodes=navigation.graph||{}, points=Object.values(nodes);
+  if(!points.length)return;
+  const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
+  const xmin=Math.min(...xs),ymin=Math.min(...ys),w=Math.max(.1,Math.max(...xs)-xmin),h=Math.max(.1,Math.max(...ys)-ymin),scale=400/Math.max(w,h);
+  g.save();g.beginPath();g.rect(0,0,480,480);g.clip();g.translate(40+(400-w*scale)/2,440-(400-h*scale)/2);g.scale(scale,-scale);
+  g.strokeStyle='#64748b';g.lineWidth=2/scale;
+  for(const edge of navigation.edges||[]){const a=nodes[edge.nodes[0]],b=nodes[edge.nodes[1]];if(a&&b){g.beginPath();g.moveTo(a[0]-xmin,a[1]-ymin);g.lineTo(b[0]-xmin,b[1]-ymin);g.stroke()}}
+  g.fillStyle='#f59e0b';g.globalAlpha=.55;
+  for(const o of [...(navigation.fixed_obstacles||[]),...(navigation.observed_obstacles||[])]){g.beginPath();g.arc(o[0]-xmin,o[1]-ymin,Math.max(o[2],3/scale),0,Math.PI*2);g.fill()}g.globalAlpha=1;
+  const path=navigation.status==='ready'?navigation.path:[];g.strokeStyle='#34d399';g.lineWidth=4/scale;g.beginPath();for(let i=0;i<path.length;i++){const p=path[i];if(i===0)g.moveTo(p[0]-xmin,p[1]-ymin);else g.lineTo(p[0]-xmin,p[1]-ymin)}g.stroke();
+  g.restore();g.fillStyle='#e5e7eb';g.font='12px system-ui';
+  for(const [name,p] of Object.entries(nodes)){const x=40+(400-w*scale)/2+(p[0]-xmin)*scale,y=440-(400-h*scale)/2-(p[1]-ymin)*scale;g.beginPath();g.arc(x,y,3,0,Math.PI*2);g.fill();g.fillText(name,x+5,y-5)}
+}
+
+/* 函数名字：update；函数作用：串行轮询状态、确认操作并在断线时清除画面；参数意义与范围：无。 */
+async function update(){const generation=uiGeneration;try{const r=await fetch('/api/status',{signal:AbortSignal.timeout(4000)});if(!r.ok)throw Error(r.status);const s=await r.json();if(generation!==uiGeneration)return;snapshot=s;online=true;
+const outcome=controlResult(s.control,pending);
+if(pending&&outcome&&outcome.status!=='pending'){$('#actionStatus').textContent=outcome.status==='done'?'操作已完成':'操作失败：'+outcome.error;pending=null;busy=false}
+if(pending&&Date.now()-pendingSince>10000){$('#actionStatus').textContent='操作确认超时，请查看当前任务状态';pending=null;busy=false}
+if(!busy&&$('#actionStatus').textContent==='等待应用连接')$('#actionStatus').textContent='应用已连接';
+$('#summary').textContent=s.application?.state==='running'?'应用在线':'应用：'+(s.application?.state||'等待');renderCameras(s);renderSerial(s);renderControls(s);draw(s.radar?.obstacles||[]);drawNavigation(s.navigation);$('#state').textContent=JSON.stringify({mission:s.mission,camera:s.camera},null,2);$('#radarState').textContent=JSON.stringify(s.radar||{},null,2);$('#events').textContent=JSON.stringify(s.events?.slice(-12)||[],null,2);
+}catch(error){online=false;$('#summary').textContent='连接中断：'+error.message;for(const role of Object.keys(cameraViews))blackCamera(role,'连接中断');if(snapshot)renderControls(snapshot);drawNavigation();$('#navigationState').textContent='连接中断，路线已撤下'}finally{setTimeout(update,800)}}update();
+</script></body></html>

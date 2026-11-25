@@ -1,0 +1,76 @@
+[
+  {
+    "local_reference": "C:\\Users\\MonthWU\\Desktop\\model.bin",
+    "board_source": null,
+    "destination": "models/yolo11_x5.bin",
+    "sha256": "bedffa66d94d8434cade9a42dd3937f135d416857633d632a63a2af71838457f",
+    "local_sha256": "bedffa66d94d8434cade9a42dd3937f135d416857633d632a63a2af71838457f",
+    "size": 10490514,
+    "previous_manifest_sha256": "0af8e289007e0ba883fdd1a6bae6f6a7ec2f0821f850443d6180cc43167dd112",
+    "previous_manifest_size": 3412759,
+    "source": "Exact BIN SHA256 matched 2026-11-09 export manifest and 2026-11-14 deployment mapping; output order cross-checked with same-source PT metadata in image_newmodel_20261125/result_pt_reference.json",
+    "previous_manifest_local_reference": "D:\\AIworkplace\\RDKx5\\GongChuan_vision2026\\appli\\dnn\\yolo11_x5.bin",
+    "replaced_model_sha256": "0af8e289007e0ba883fdd1a6bae6f6a7ec2f0821f850443d6180cc43167dd112",
+    "deployment_status": "LOCAL_ONLY_BOARD_UNREACHABLE_20261125"
+  },
+  {
+    "source": "User supplied semantic class catalog; model output order is defined by yolo11_x5.classes.json",
+    "local_reference": "D:\\AIworkplace\\RDKx5\\GongChuan_vision2026\\car26_new\\assets\\models\\classes.name",
+    "board_source": null,
+    "destination": "models/classes.name",
+    "sha256": "c20b63262477831f3ec033b1aa14746870f07f97475f999ed5d8de1b7161ef77",
+    "local_sha256": "c20b63262477831f3ec033b1aa14746870f07f97475f999ed5d8de1b7161ef77",
+    "size": 104,
+    "previous_source": {
+      "local_reference": "D:\\AIworkplace\\RDKx5\\GongChuan_vision2026\\appli\\dnn\\classes.names",
+      "board_source": "/root/Monthwu/car26_ws/dnn/classes.names",
+      "destination": "models/object.names",
+      "sha256": "592800176bcc28dbe90af88b2cfa0382793c2e42cc69eb5d590b0b84524cc4e1",
+      "local_sha256": "6074638a4f29c449f0b85e82c18080f80c7d7bac8aa8bdda6717a75541dc5968",
+      "size": 71
+    },
+    "role": "semantic_class_catalog"
+  },
+  {
+    "local_reference": "D:\\AIworkplace\\RDKx5\\GongChuan_vision2026\\appli\\framework\\dnn\\yolo11_x5_obstacle.bin",
+    "board_source": "/root/Monthwu/car26_ws/framework/dnn/yolo11_x5_obstacle.bin",
+    "destination": "models/yolo11_x5_obstacle.bin",
+    "sha256": "91f7b1d4999c20b2571b0c205975dde5a427941a7d8602ca8ff7db74a775c6cb",
+    "local_sha256": "91f7b1d4999c20b2571b0c205975dde5a427941a7d8602ca8ff7db74a775c6cb",
+    "size": 10621266
+  },
+  {
+    "local_reference": "D:\\AIworkplace\\RDKx5\\GongChuan_vision2026\\appli\\framework\\dnn\\classes_obstacle.names",
+    "board_source": "/root/Monthwu/car26_ws/framework/dnn/classes_obstacle.names",
+    "destination": "models/obstacle.names",
+    "sha256": "90a7b08f76a1a33dc3e4c9decf39ff93a88918f1f46fd1b3fbf5edd619d77dc6",
+    "local_sha256": "8f9e754b878727ea74eefc0498776c9ebadf5dfb0f68647f5bbe60219b643482",
+    "size": 6
+  },
+  {
+    "local_reference": "D:\\AIworkplace\\RDKx5\\GongChuan_vision2026\\appli\\framework\\dnn\\obstacle_roi\\merged_runtime.json",
+    "board_source": "/root/Monthwu/car26_ws/framework/dnn/obstacle_roi/merged_runtime.json",
+    "destination": "calibration/merged_runtime.json",
+    "sha256": "f33bed4d73bf4803e1d4cc5f05bf26a0f807f8532a190cdfb21ed4b0a4656b55",
+    "local_sha256": "f33bed4d73bf4803e1d4cc5f05bf26a0f807f8532a190cdfb21ed4b0a4656b55",
+    "size": 6034
+  },
+  {
+    "local_reference": "D:\\AIworkplace\\RDKx5\\GongChuan_vision2026\\appli\\framework\\object_camera_color.json",
+    "board_source": "/root/Monthwu/car26_ws/framework/object_camera_color.json",
+    "destination": "calibration/object_camera_color.json",
+    "sha256": "831d7bd75efdd47fd04a5927f4af1a548951c6eea738c8c5cff5d175883b2ce7",
+    "local_sha256": "831d7bd75efdd47fd04a5927f4af1a548951c6eea738c8c5cff5d175883b2ce7",
+    "size": 262
+  },
+  {
+    "source": "Exact BIN SHA256 matched 2026-11-09 export manifest and 2026-11-14 deployment mapping; output order cross-checked with same-source PT metadata in image_newmodel_20261125/result_pt_reference.json",
+    "destination": "models/yolo11_x5.classes.json",
+    "model_sha256": "bedffa66d94d8434cade9a42dd3937f135d416857633d632a63a2af71838457f",
+    "sha256": "2966563ce773468f716860bbf6de9a8f4a9ab5276ed64ded23d16909176e7f1e",
+    "size": 1321,
+    "local_sha256": "2966563ce773468f716860bbf6de9a8f4a9ab5276ed64ded23d16909176e7f1e",
+    "board_source": null,
+    "deployment_status": "LOCAL_ONLY_BOARD_UNREACHABLE_20261125"
+  }
+]

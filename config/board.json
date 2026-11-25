@@ -1,0 +1,28 @@
+{
+  "extends": "system.json",
+  "lighting_mode": "light_able",
+  "communication": {"device": "/dev/ttyS2"},
+  "mission": {"entry": "qr"},
+  "radar": {"enabled": false},
+  "cameras": {
+    "qr": {"device": "/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0", "width": 640, "height": 400, "roi": null},
+    "object": {"device": "/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0",
+      "width": 640, "height": 360, "fps": 30, "buffer_count": 2,
+      "capture_width": 640, "capture_height": 360, "capture_fps": 30,
+      "recognition_modes": {
+        "block": {"width": 640, "height": 360, "fps": 30},
+        "disc": {"width": 1280, "height": 720, "fps": 30},
+        "target": {"width": 1280, "height": 720, "fps": 30}
+      },
+      "fourcc": "MJPG", "controls": {},
+      "uvc_controls": {"auto_exposure": 1, "exposure_time_absolute": 50, "brightness": 128, "gain": 16},
+      "lighting_profiles": {
+        "light_able": {"auto_exposure": 1, "exposure_time_absolute": 50, "brightness": 128, "gain": 16},
+        "light_unable": {"auto_exposure": 1, "exposure_time_absolute": 50, "brightness": 128, "gain": 48}
+      }}
+  },
+  "camera_processing": {"reference_px": [320, 180]},
+  "target_focus": {"enabled": true, "trigger": "command", "seed_max_age_s": 1.0},
+  "disc_centering": {"enabled": true, "parameter_file": "../config/disc.json",
+    "native_library": "../native/lib/libcar26_disc.so", "tolerance_px": [5, 5]}
+}

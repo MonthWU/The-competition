@@ -1,0 +1,11 @@
+# YOLO候选筛选与分类解码
+
+2026-11-24：640模型的9类原始logit先由native/yolo_candidates.cpp按宽松下界筛选可能达到置信度的网格。下界以最终阈值减去当前浮点类型8个epsilon后做logit变换；仅作为保守候选门控。最终仍对候选的全部类别执行原clip(-80,80)、sigmoid、概率argmax及最终置信度判断，保留饱和/舍入并列首类别行为。含NaN的格子与原max语义相同被拒绝。
+
+当前float32部署使用NativeCandidates，支持HWC或CHW视图的正跨度读入；负跨度/未对齐输入先转连续，float16/64使用NumPy候选筛选。decode_heads可不传selector以支持纯函数和旧配置；BpuDetector在models.object.candidate_library配置存在时加载原生库，加载失败会明确报错，--check-files也检查文件存在。
+
+库通过ctypes.PyDLL调用，当前80/40/20网格、9类的短扫描不释放GIL；不把此策略用于较长的OpenCV圆检测或BPU推理。概率、DFL及现有分类别NMS继续由原解码流程执行。没有跨类别抑制，没有按logit直接决定类别，没有改变置信度或NMS阈值。
+
+独立物块与两分项目的candidate_library路径必须解析到同一native/lib/libcar26_candidates.so。首次部署或原生源码变化时先运行bash scripts/build_candidates.sh，再运行bash scripts/build.sh及入口--check-files；禁止复制Windows库。
+
+边界测试见tests/test_candidates.py；配对真实张量及完整FPS实测见artifacts/candidate_opt_20261124/REPORT.md。后处理提速不等于整链路FPS提升，本轮完整FPS仍约15。

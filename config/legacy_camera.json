@@ -1,0 +1,11 @@
+{
+  "extends": "system.json",
+  "mission": {"prescan_source": "camera"},
+  "radar": {"enabled": false},
+  "cameras": {
+    "qr": {"device": "/dev/v4l/by-id/usb-KINGSEN_KS1A293-video-index0", "fps": 240},
+    "object": {"device": "/dev/v4l/by-id/usb-LRCP_AR0234_LRCP_AR0234_01.00.00-video-index0", "fps": 90},
+    "prescan": {"device": "/dev/v4l/by-id/usb-DCXIN_DCXIN_Camera_01.00.000-video-index0", "controls": {"brightness": 128, "gain": 48}}
+  },
+  "models": {"object": {"rgb_gains": [0.953, 1.0, 0.860]}, "obstacle": {"nms_threshold": 0.45}}
+}

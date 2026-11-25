@@ -1,0 +1,19 @@
+{
+  "processing_width": 960,
+  "maximum_saturation": 32,
+  "minimum_value": 25,
+  "morphology_size": 5,
+  "minimum_component_area_ratio": 0.06,
+  "minimum_diameter_ratio": 0.50,
+  "maximum_diameter_ratio": 2.0,
+  "minimum_axis_ratio": 0.60,
+  "inlier_distance_px": 3.0,
+  "minimum_inliers": 70,
+  "minimum_coverage_deg": 130.0,
+  "minimum_visible_support": 0.55,
+  "minimum_white_fraction": 0.65,
+  "iterations": 480,
+  "bright_maximum_saturation": 80,
+  "bright_minimum_value": 80,
+  "minimum_enclosure_ratio": 0.88
+}

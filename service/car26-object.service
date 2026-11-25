@@ -1,0 +1,22 @@
+# Purpose: start standalone object recognition at boot and restart after failures.
+[Unit]
+Description=Car26 object recognition and HMI
+After=systemd-udevd.service network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Monthwu/GongChuang_vision_26
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/bin/bash /root/Monthwu/GongChuang_vision_26/start_coloritems.sh debug light_unable
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+KillMode=control-group
+TimeoutStopSec=15
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

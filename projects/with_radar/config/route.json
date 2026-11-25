@@ -1,0 +1,11 @@
+{
+  "confirmed": false,
+  "frame": "field",
+  "vehicle_radius_m": null,
+  "margin_m": null,
+  "nodes": {},
+  "edges": [],
+  "start_node": null,
+  "goals": [],
+  "fixed_obstacles": null
+}

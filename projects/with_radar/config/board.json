@@ -1,0 +1,47 @@
+{
+  "extends": "../../../config/board.json",
+  "mission": {
+    "entry": "qr"
+  },
+  "radar": {
+    "enabled": true,
+    "device": "",
+    "extrinsic_calibrated": false
+  },
+  "models": {
+    "object": {
+      "file": "../../../assets/models/yolo11_x5.bin",
+      "classes": "../../../assets/models/classes.name",
+      "class_map": "../../../assets/models/yolo11_x5.classes.json",
+      "candidate_library": "../../../native/lib/libcar26_candidates.so"
+    },
+    "obstacle": {
+      "file": "../../../assets/models/yolo11_x5_obstacle.bin",
+      "classes": "../../../assets/models/obstacle.names"
+    }
+  },
+  "camera_mapping": {
+    "roi_file": "../../../assets/calibration/merged_runtime.json"
+  },
+  "target_focus": {
+    "native_library": "../../../native/lib/libcar26_focus.so"
+  },
+  "disc_centering": {
+    "parameter_file": "../../../config/disc.json",
+    "native_library": "../../../native/lib/libcar26_disc.so"
+  },
+  "navigation": {
+    "enabled": true,
+    "mode": "dynamic",
+    "map_file": "route.json",
+    "pose_file": null,
+    "interval_s": 0.5,
+    "pose_timeout_s": 0.5,
+    "sync_tolerance_s": 0.1,
+    "snap_m": 0.05,
+    "goal_tolerance_m": 0.05,
+    "point_radius_m": 0.03,
+    "memory_cell_m": 0.05,
+    "maximum_observations": 4096
+  }
+}

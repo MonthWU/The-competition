@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "model_sha256": "bedffa66d94d8434cade9a42dd3937f135d416857633d632a63a2af71838457f",
+  "source": "Exact BIN SHA256 matched 2026-11-09 export manifest and 2026-11-14 deployment mapping; output order cross-checked with same-source PT metadata in image_newmodel_20261125/result_pt_reference.json",
+  "blue_semantics": "User confirmed 2026-11-22: blue1 is light blue (0x45), blue2 is dark blue (0x46)",
+  "outputs": [
+    {
+      "index": 0,
+      "source_name": "red1",
+      "label": "redblock"
+    },
+    {
+      "index": 1,
+      "source_name": "yellow1",
+      "label": "yellowblock"
+    },
+    {
+      "index": 2,
+      "source_name": "green1",
+      "label": "greenblock"
+    },
+    {
+      "index": 3,
+      "source_name": "black1",
+      "label": "blackblock"
+    },
+    {
+      "index": 4,
+      "source_name": "blue1",
+      "label": "lightblueblock"
+    },
+    {
+      "index": 5,
+      "source_name": "blue2",
+      "label": "darkblueblock"
+    },
+    {
+      "index": 6,
+      "source_name": "targetOne",
+      "label": "targetOne"
+    },
+    {
+      "index": 7,
+      "source_name": "targetTwo",
+      "label": "targetTwo"
+    },
+    {
+      "index": 8,
+      "source_name": "targetThree",
+      "label": "targetThree"
+    }
+  ]
+}
